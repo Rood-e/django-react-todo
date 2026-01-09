@@ -1,12 +1,18 @@
 services:
   db:
     image: postgres:15
+    restart: always
     volumes:
       - ./data/db:/var/lib/postgresql/data
     environment:
-      - POSTGRES_DB=postgres
-      - POSTGRES_USER=postgres
-      - POSTGRES_PASSWORD=postgres
+      - POSTGRES_DB=todo_db
+      - POSTGRES_USER=todo_user
+      - POSTGRES_PASSWORD=MicRamenPorco
+    healthcheck:
+      test: [ "CMD-SHELL", "pg_isready -U todo_user -d todo_db" ]
+      interval: 5s
+      timeout: 5s
+      retries: 5
 
   backend:
     build: ./backend
@@ -15,8 +21,15 @@ services:
       - ./backend:/app
     ports:
       - "8000:8000"
+    environment:
+      - DB_NAME=todo_db
+      - DB_USER=todo_user
+      - DB_PASSWORD=MicRamenPorco
+      - DB_HOST=db
+      - DB_PORT=5432
     depends_on:
-      - db
+      db:
+        condition: service_healthy
 
   frontend:
     build: ./frontend

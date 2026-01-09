@@ -78,9 +78,9 @@ WSGI_APPLICATION = 'djangoproj.wsgi.application'
 DATABASES = {
     'default': {
         'ENGINE': 'django.db.backends.postgresql',
-        'NAME': 'postgres',
-        'USER': 'postgres',
-        'PASSWORD': 'postgres',
+        'NAME': 'todo_db',
+        'USER': 'todo_user',
+        'PASSWORD': 'MicRamenPorco',
         'HOST': 'db',
         'PORT': '5432',
     }
