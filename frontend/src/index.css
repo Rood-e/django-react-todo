@@ -14,3 +14,18 @@
 
 /* Forza Tailwind a riconoscere la classe .dark sulla root */
 @custom-variant dark (&:where(.dark, .dark *));
+
+
+@keyframes borderDraw {
+  from {
+    stroke-dashoffset: 1; /* Scomparso */
+  }
+  to {
+    stroke-dashoffset: 0; /* Completato */
+  }
+}
+
+.animate-border-draw {
+  /* Assicurati che il tempo (5s) coincida con il tuo intervallo in App.jsx */
+  animation: borderDraw 5000ms linear forwards;
+}
