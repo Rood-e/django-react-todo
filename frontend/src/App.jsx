@@ -1,6 +1,7 @@
 import { useState, useEffect } from "react";
 import ThemeButton from "./components/ThemeButton.jsx";
 import FeatureDisplay from "./components/FeatureDisplay.jsx";
+import HeroSection from "./components/HeroSection.jsx";
 import { PencilIcon, CloudArrowUpIcon, Squares2X2Icon, ArchiveBoxIcon } from '@heroicons/react/24/outline';
 
 const features = [
@@ -76,18 +77,9 @@ function App() {
                 <ThemeButton isDark={isDark} setIsDark={setIsDark}/>
             </div>
 
-            <section className="h-screen w-full flex flex-col items-center justify-center">
-                <div className="text-center">
-                    <h1 className="text-6xl font-extrabold text-slate-900 dark:text-white tracking-tight">
-                        Task<span className="text-blue-600">Master</span>
-                    </h1>
-                    <p className="mt-4 text-xl text-slate-600 dark:text-slate-400 max-w-lg mx-auto">
-                        Organizza la tua giornata, un task alla volta. Semplice, veloce e moderno.
-                    </p>
-                </div>
-            </section>
+            <HeroSection isDark={isDark}/>
 
-            <section className="w-full py-20 bg-white dark:bg-slate-900">
+            <section className="w-full pt-50 pb-20 bg-white dark:bg-slate-900">
 
                 <div className="text-center mb-16">
                     <h2 className="text-3xl md:text-4xl font-bold text-slate-900 dark:text-white">
@@ -121,6 +113,10 @@ function App() {
                     </div>
                 </div>
             </section>
+
+            <footer className="py-10">
+            </footer>
+
         </div>
     );
 }

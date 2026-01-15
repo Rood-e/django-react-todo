@@ -1,9 +1,7 @@
 const FeatureDisplay = ({ activeFeature }) => {
 
-    console.log(activeFeature);
-
     return (
-        <div className="relative w-full h-full flex flex-col items-center justify-between p-8 bg-white dark:bg-slate-800 rounded-2xl overflow-hidden">
+        <div className="relative w-full h-full flex flex-col items-center justify-between shadow-xl p-8 bg-white dark:bg-slate-800 rounded-2xl overflow-hidden">
 
             {/* SVG per il Bordo Animato */}
             <svg className="absolute inset-0 w-full h-full pointer-events-none">
