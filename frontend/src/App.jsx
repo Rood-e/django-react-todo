@@ -7,6 +7,9 @@ import PrivacyContent from "./components/legal/PrivacyContent.jsx";
 import TermsContent from "./components/legal/TermsContent.jsx";
 import ContactForm from './components/legal/ContactForm.jsx';
 import {useEffect, useState} from "react";
+import AuthLayout from "./components/auth/AuthLayout.jsx";
+import Register from "./components/auth/Register.jsx";
+import Login from "./components/auth/Login.jsx";
 
 function App(){
     const [isDark, setIsDark] = useState(() => {
@@ -34,6 +37,14 @@ function App(){
                     <Route path='terms' element={<TermsContent/>}/>
                     <Route path='contact' element={<ContactForm/>}/>
                 </Route>
+
+                <Route path='/login' element={
+                  <AuthLayout children={<Login/>} isDark={isDark} setIsDark={setIsDark}/>
+                }/>
+
+                <Route path='/register' element={
+                  <AuthLayout children={<Register/>} isDark={isDark} setIsDark={setIsDark}/>
+                }/>
 
                 {/*<Route path='/app' element={<TaskMaster/>}/>*/}
 

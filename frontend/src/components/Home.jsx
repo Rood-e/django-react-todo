@@ -66,6 +66,19 @@ function Home({isDark, setIsDark}) {
                 <ThemeButton isDark={isDark} setIsDark={setIsDark}/>
             </div>
 
+            <div className="absolute top-6 right-6 flex items-center gap-4 z-50">
+                <Link to="/login"  className="px-4 py-2 text-sm font-bold text-slate-600 dark:text-slate-400
+                   hover:text-blue-600 dark:hover:text-blue-400 transition-colors">
+                    Accedi
+                </Link>
+
+                <Link to="/register" className="px-4 py-2.5 bg-blue-600 dark:bg-blue-500 text-white text-xs font-black
+                   uppercase tracking-widest rounded-full shadow-lg shadow-blue-500/20
+                   hover:shadow-blue-500/40 hover:-translate-y-0.5 active:scale-95 transition-all">
+                    Crea Account
+                </Link>
+            </div>
+
             {/* Hero */}
             <HeroSection isDark={isDark}/>
 
@@ -176,11 +189,10 @@ function Home({isDark, setIsDark}) {
                         </p>
 
                         <div className="flex flex-col sm:flex-row gap-4 justify-center">
-                            <a href={'/'}>
-                                <p className="px-8 py-4 bg-blue-600 hover:bg-blue-500 text-white font-bold rounded-2xl transition-all duration-300 shadow-lg shadow-blue-500/25 hover:scale-105 active:scale-95">
-                                    Inizia Ora
-                                </p>
-                            </a>
+                            <Link to='/register' className="px-8 py-4 bg-blue-600 hover:bg-blue-500 text-white font-bold
+                                rounded-2xl transition-all duration-300 shadow-lg shadow-blue-500/25 hover:scale-105 active:scale-95">
+                                Inizia Ora
+                            </Link>
                         </div>
                         <p className="mt-5 text-slate-500 text-sm font-medium tracking-wide">
                             Libero da costi • Pronto in 30 secondi

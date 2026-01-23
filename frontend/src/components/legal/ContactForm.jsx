@@ -6,7 +6,7 @@ const ContactForm = () => {
     const handleSubmit = (e) => {
         e.preventDefault();
         setStatus('Inviando...');
-        // TODO: Aggiungere via Django la creazione dell'invio della mail
+        // TODO: Aggiungere via Django l'invio della mail
         setTimeout(() => setStatus('Messaggio inviato con successo!'), 1500);
     };
 
