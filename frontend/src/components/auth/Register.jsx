@@ -1,15 +1,28 @@
-import { Link } from 'react-router-dom';
+import {Link, useNavigate} from 'react-router-dom';
 import {useState} from "react";
 import {ArrowLeftIcon} from "@heroicons/react/24/outline";
+import api from "../../api.js";
+
+const sendRegistration = async (data,navigate) => {
+    try {
+        let response = await api.post('/register/', data)
+        navigate('/login')
+    }
+    catch(e) {
+        console.error("Errore dal backend:", e.response.data);
+        alert("Errore: " + JSON.stringify(e.response.data));
+    }
+}
 
 function Register(){
     const [errors, setErrors] = useState([]); // Array degli ID campi non validi
+    const navigate = useNavigate();
 
     const handleSubmit = (e) => {
         e.preventDefault();
         setErrors([]); // Reset errori
 
-        const name = document.getElementById('name');
+        const name = document.getElementById('username');
         const mail = document.getElementById('mail');
         const pass = document.getElementById('passwd');
         const confirm = document.getElementById('confirm_p');
@@ -74,7 +87,14 @@ function Register(){
             return;
         }
 
-        console.log("Invio dati a Django...");
+        let data = {
+            username: name.value.trim(),
+            email: mail.value.trim(),
+            password: pass.value.trim(),
+        }
+
+
+        sendRegistration(data,navigate);
     }
 
     const getInputClass = (id) => {
@@ -107,10 +127,10 @@ function Register(){
             <div className="grid grid-cols-1 gap-5">
                 <div className="group">
                     <label className="block text-xs font-bold uppercase tracking-wider text-slate-500 dark:text-slate-400 mb-1 ml-4">Nome</label>
-                    <input type="text" id='name' className={getInputClass('name')} placeholder="Il tuo nome"/>
+                    <input type="text" id='username' className={getInputClass('username')} placeholder="Il tuo nome"/>
                     {
                         getErrorDetails('name') && (<p className='text-[10px] ml-3 p-1 font-semibold uppercase tracking-wider
-                            rounded bg-red-50 dark:bg-red-900/20 text-red-600 dark:text-red-400 inline-block'>{getErrorDetails('name')}</p>)
+                            rounded bg-red-50 dark:bg-red-900/20 text-red-600 dark:text-red-400 inline-block'>{getErrorDetails('username')}</p>)
                     }
                 </div>
 
@@ -128,7 +148,7 @@ function Register(){
                         <label className="block text-xs font-bold uppercase tracking-wider text-slate-500 dark:text-slate-400 mb-1 ml-4">Password</label>
                         <input type="password" id='passwd' className={getInputClass('passwd')} placeholder="••••••••" />
                         {
-                            getErrorDetails('passwd') && (<p className='text-[10px] ml-3 p-1 font-semibold uppercase tracking-wider
+                            getErrorDetails('passwd') && (<p className='text-[10px] ml-1 p-1 font-semibold uppercase tracking-wider
                             rounded bg-red-50 dark:bg-red-900/20 text-red-600 dark:text-red-400 inline-block'>{getErrorDetails('passwd')}</p>)
                         }
                     </div>
@@ -136,7 +156,7 @@ function Register(){
                         <label className="block text-xs font-bold uppercase tracking-wider text-slate-500 dark:text-slate-400 mb-1 ml-3">Conferma</label>
                         <input type="password" id='confirm_p' className={getInputClass('confirm_p')} placeholder="••••••••" />
                         {
-                            getErrorDetails('confirm_p') && (<p className='text-[10px] ml-3 p-1 font-semibold uppercase tracking-wider
+                            getErrorDetails('confirm_p') && (<p className='text-[10px] ml-1 p-1 font-semibold uppercase tracking-wider
                             rounded bg-red-50 dark:bg-red-900/20 text-red-600 dark:text-red-400 inline-block'>{getErrorDetails('confirm_p')}</p>)
                         }
                     </div>

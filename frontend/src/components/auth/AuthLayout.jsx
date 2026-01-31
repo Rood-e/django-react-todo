@@ -5,24 +5,6 @@ import {useEffect, useState} from "react";
 const lightColors = ["#FFFFFF", "#F0F9FF", "#3B82F6", "#DBEAFE"];
 const darkColors = ["#142749", "#1549c5", "#3469a6", "#0e2160"];
 
-/*const sendData = async (url,data) => {
-    try{
-        const response = await fetch(url,{
-                method: "POST",
-                headers: {
-                    "Content-Type": "application/json",
-                },
-                body: JSON.stringify(data),
-            });
-
-        if(!response.ok)
-            throw new Error(response.statusText);
-    }catch(err){
-        console.error(err);
-    }
-}*/
-
-
 function AuthLayout({children,isDark,setIsDark}) {
     const [isTransitioning, setIsTransitioning] = useState(false);
 

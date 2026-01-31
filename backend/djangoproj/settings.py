@@ -38,8 +38,20 @@ INSTALLED_APPS = [
     'django.contrib.messages',
     'django.contrib.staticfiles',
     'djangoapp',
-    'corsheaders'
+    'corsheaders',
+    'rest_framework',
+    'rest_framework.authtoken',
 ]
+
+REST_FRAMEWORK = {
+    'DEFAULT_PERMISSION_CLASSES': [ # Chi ha il permesso di interagire col backend
+        'rest_framework.permissions.IsAuthenticated',
+    ],
+    'DEFAULT_AUTHENTICATION_CLASSES': [ # Come l'utente dimostra la sua identità
+        'rest_framework.authentication.SessionAuthentication',
+        'rest_framework.authentication.BasicAuthentication',
+    ],
+}
 
 MIDDLEWARE = [
     'corsheaders.middleware.CorsMiddleware',
@@ -132,3 +144,5 @@ CORS_ALLOWED_ORIGINS = [
 STATICFILES_DIRS = [BASE_DIR / 'static']
 STATIC_ROOT = BASE_DIR / 'staticfiles' # Dove verranno raccolti per la produzione
 MEDIA_ROOT = BASE_DIR / 'media'
+
+AUTH_USER_MODEL = 'djangoapp.User'

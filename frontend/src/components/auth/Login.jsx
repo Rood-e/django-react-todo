@@ -1,9 +1,24 @@
-import { Link } from 'react-router-dom';
+import {Link, useNavigate} from 'react-router-dom';
 import {useState} from "react";
 import {ArrowLeftIcon} from "@heroicons/react/24/outline";
+import api from "../../api.js";
 
-function Register(){
+const log_in = async (data,navigate) => {
+    try {
+        let response = await api.post('/login/', data)
+        localStorage.setItem("token", response.data.token)
+        navigate("/app")
+    }
+    catch(e) {
+        console.log(e)
+        console.error("Errore dal backend:", e.response.data);
+        alert("Errore: " + JSON.stringify(e.response.data));
+    }
+}
+
+function Login(){
     const [errors, setErrors] = useState([]); // Array degli ID campi non validi
+    const navigate = useNavigate();
 
     const handleSubmit = (e) => {
         e.preventDefault();
@@ -48,7 +63,12 @@ function Register(){
             return;
         }
 
-        console.log("Invio dati a Django...");
+        let data = {
+            email: mail.value.trim(),
+            password: pass.value.trim()
+        }
+
+        log_in(data,navigate);
     }
 
     const getInputClass = (id) => {
@@ -134,4 +154,4 @@ function Register(){
     )
 }
 
-export default Register;
+export default Login;

@@ -1,3 +1,6 @@
 django
 psycopg2-binary
 django-cors-headers
+djangorestframework
+django-stubs
+djangorestframework-stubs
