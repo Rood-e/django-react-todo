@@ -3,26 +3,19 @@ import {useState} from "react";
 import {ArrowLeftIcon} from "@heroicons/react/24/outline";
 import api from "../../api.js";
 
-const log_in = async (data,navigate) => {
-    try {
-        let response = await api.post('/login/', data)
-        localStorage.setItem("token", response.data.token)
-        navigate("/app")
-    }
-    catch(e) {
-        console.log(e)
-        console.error("Errore dal backend:", e.response.data);
-        alert("Errore: " + JSON.stringify(e.response.data));
-    }
+const log_in = async (data) => {
+    return await api.post("login/", data);
 }
 
 function Login(){
-    const [errors, setErrors] = useState([]); // Array degli ID campi non validi
+    const [errors, setErrors] = useState([]);
+    const [backendErrors, setBackendErrors] = useState({});
     const navigate = useNavigate();
 
-    const handleSubmit = (e) => {
+    const handleSubmit = async (e) => {
         e.preventDefault();
-        setErrors([]); // Reset errori
+        setErrors([]);
+        setBackendErrors({});
 
         const mail = document.getElementById('mail');
         const pass = document.getElementById('passwd');
@@ -54,7 +47,7 @@ function Login(){
             if (pass.value.trim().length < 8)
                 currentErrors.push({
                     'fields': [pass],
-                    'message': 'Il campo "password" deve comprendere almeno 8 caratteri'
+                    'message': 'La password deve comprendere almeno 8 caratteri'
                 });
         }
 
@@ -68,14 +61,41 @@ function Login(){
             password: pass.value.trim()
         }
 
-        log_in(data,navigate);
+        try {
+            // SALVATAGGIO TOKEN:
+            // Attendiamo la risposta che contiene il token generato da Django
+            const response = await log_in(data);
+
+            // Salviamo il token nel localStorage per usarlo nelle chiamate future
+            localStorage.setItem('token', response.data.token);
+
+            // Opzionale: puoi salvare anche lo username o l'email se ti servono in UI
+            localStorage.setItem('user_email', response.data.email);
+
+            navigate('/app');
+        } catch (e) {
+            if (e.response && e.response.data) {
+                setBackendErrors(e.response.data);
+            } else {
+                console.error('ERRORE CRITICO: ', e);
+            }
+        }
     }
 
     const getInputClass = (id) => {
         // Verifichiamo se l'ID del campo è presente in uno qualsiasi degli oggetti errore
-        const isInvalid = errors.some(error =>
+        const isFrontendInvalid = errors.some(error =>
             error.fields.some(field => field.id === id)
         );
+
+        const djangoFieldName = id === 'mail' ? 'email' : id;
+
+        // Se il backend restituisce un errore generico (es. credenziali errate)
+        // Django spesso lo mette in "error" o "non_field_errors"
+        const isBackendInvalid = !!backendErrors[djangoFieldName] || !!backendErrors['error'];
+
+        // CORREZIONE LOGICA: deve essere rosso SE frontend invalido OPPURE backend invalido
+        const isInvalid = isFrontendInvalid || isBackendInvalid;
 
         return `w-full px-4 py-3 bg-slate-100 dark:bg-slate-800/50 border-2 rounded-2xl transition-all outline-none 
         ${isInvalid
@@ -85,15 +105,26 @@ function Login(){
         };
 
     const getErrorDetails = (id) => {
-        if (errors.length === 0) return '';
-
-        // Cerchiamo l'errore che contiene il campo con l'ID fornito
         const foundError = errors.find(error =>
             error.fields.some(field => field.id === id)
         );
+        if (foundError) return foundError.message;
 
-        // Se lo trova, restituisce il messaggio, altrimenti stringa vuota
-        return foundError ? foundError.message : '';
+        const djangoFieldName = id === 'mail' ? 'email' : id;
+
+        // Gestione errore specifico del campo o errore generico "error"
+        if (backendErrors[djangoFieldName]) {
+            return Array.isArray(backendErrors[djangoFieldName])
+                ? backendErrors[djangoFieldName][0]
+                : backendErrors[djangoFieldName];
+        }
+
+        // Se c'è un errore generico di login (es. credenziali sbagliate), lo mostriamo sotto la mail
+        if (id === 'mail' && backendErrors['error']) {
+            return backendErrors['error'];
+        }
+
+        return '';
     };
 
     return (
