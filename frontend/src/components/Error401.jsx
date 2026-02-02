@@ -1,7 +1,7 @@
 import { Link } from 'react-router-dom';
 
 export default function Error401({children}) {
-    const token = localStorage.getItem('tokean');
+    const token = localStorage.getItem('token');
 
     if (token)
         return children;
