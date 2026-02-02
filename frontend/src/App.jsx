@@ -1,15 +1,16 @@
 import { Routes, Route } from 'react-router-dom';
-import Home from './components/Home';
-import Error404 from './components/Error404';
+import {useEffect, useState} from "react";
 
 import LegalHub from './components/legal/LegalHub';
 import PrivacyContent from "./components/legal/PrivacyContent.jsx";
 import TermsContent from "./components/legal/TermsContent.jsx";
 import ContactForm from './components/legal/ContactForm.jsx';
-import {useEffect, useState} from "react";
+import Home from './components/Home/Home.jsx';
 import AuthLayout from "./components/auth/AuthLayout.jsx";
 import Register from "./components/auth/Register.jsx";
 import Login from "./components/auth/Login.jsx";
+import Error404 from './components/Error404';
+import Error401 from "./components/Error401.jsx";
 
 function App(){
     const [isDark, setIsDark] = useState(() => {
@@ -46,7 +47,14 @@ function App(){
                   <AuthLayout children={<Register/>} isDark={isDark} setIsDark={setIsDark}/>
                 }/>
 
-                {/*<Route path='/app' element={<TaskMaster/>}/>*/}
+                <Route path='/app' element={
+                    <Error401>
+                        {/*<AuthLayout isDark={isDark} setIsDark={setIsDark}>*/}
+                        {/*    <PrivacyContent />*/}
+                        {/*</AuthLayout>*/}
+                    </Error401>
+                }/>
+
 
                 <Route path='*' element={<Error404/>}/>
             </Routes>

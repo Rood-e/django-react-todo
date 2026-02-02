@@ -3,24 +3,20 @@ import {useState} from "react";
 import {ArrowLeftIcon} from "@heroicons/react/24/outline";
 import api from "../../api.js";
 
-const sendRegistration = async (data,navigate) => {
-    try {
-        let response = await api.post('/register/', data)
-        navigate('/login')
-    }
-    catch(e) {
-        console.error("Errore dal backend:", e.response.data);
-        alert("Errore: " + JSON.stringify(e.response.data));
-    }
+// Parametri invertiti per coerenza con la chiamata nel try/catch
+const sendRegistration = async (data) => {
+    return await api.post('register/', data);
 }
 
 function Register(){
-    const [errors, setErrors] = useState([]); // Array degli ID campi non validi
+    const [errors, setErrors] = useState([]); // Errori validazione Frontend
+    const [backendErrors, setBackendErrors] = useState({}); // Errori dal Database (Django)
     const navigate = useNavigate();
 
-    const handleSubmit = (e) => {
+    const handleSubmit = async (e) => {
         e.preventDefault();
-        setErrors([]); // Reset errori
+        setErrors([]);
+        setBackendErrors({});
 
         const name = document.getElementById('username');
         const mail = document.getElementById('mail');
@@ -30,7 +26,7 @@ function Register(){
 
         const currentErrors = [];
 
-        // Validazione
+        // Validazione FRONTEND
         if(!name.value.trim())
             currentErrors.push({
                 'fields': [name],
@@ -93,15 +89,27 @@ function Register(){
             password: pass.value.trim(),
         }
 
-
-        sendRegistration(data,navigate);
+        // --- INVIO AL BACKEND ---
+        try{
+            await sendRegistration(data);
+            navigate('/login');
+        } catch(e){
+            if (e.response && e.response.data)
+                setBackendErrors(e.response.data);
+            else
+                console.error("Errore critico:", e);
+        }
     }
 
     const getInputClass = (id) => {
-        // Verifichiamo se l'ID del campo è presente in uno qualsiasi degli oggetti errore
-        const isInvalid = errors.some(error =>
-            error.fields.some(field => field.id === id)
-        );
+        // Un campo è invalido se fallisce la validazione front o se il backend restituisce un errore per quel nome
+        const isFrontendInvalid = errors.some(error => error.fields.some(field => field.id === id));
+
+        // Mappatura nomi campi React -> Django
+        const djangoFieldName = id === 'mail' ? 'email' : id;
+        const isBackendInvalid = !!backendErrors[djangoFieldName];
+
+        const isInvalid = isFrontendInvalid || isBackendInvalid;
 
         return `w-full px-4 py-3 bg-slate-100 dark:bg-slate-800/50 border-2 rounded-2xl transition-all outline-none 
     ${isInvalid
@@ -110,16 +118,20 @@ function Register(){
         } text-slate-900 dark:text-white`;
     };
 
-    const getErrorDetails = (id) => {
-        if (errors.length === 0) return '';
+    const getErrorMessage = (id) => {
+        // 1. Priorità agli errori Frontend
+        const foundError = errors.find(error => error.fields.some(field => field.id === id));
+        if (foundError) return foundError.message;
 
-        // Cerchiamo l'errore che contiene il campo con l'ID fornito
-        const foundError = errors.find(error =>
-            error.fields.some(field => field.id === id)
-        );
+        // 2. Se non ci sono errori front, cerca quelli del Backend
+        const djangoFieldName = id === 'mail' ? 'email' : id;
+        if (backendErrors[djangoFieldName]) {
+            return Array.isArray(backendErrors[djangoFieldName])
+                ? backendErrors[djangoFieldName][0]
+                : backendErrors[djangoFieldName];
+        }
 
-        // Se lo trova, restituisce il messaggio, altrimenti stringa vuota
-        return foundError ? foundError.message : '';
+        return '';
     };
 
     return (
@@ -129,8 +141,11 @@ function Register(){
                     <label className="block text-xs font-bold uppercase tracking-wider text-slate-500 dark:text-slate-400 mb-1 ml-4">Nome</label>
                     <input type="text" id='username' className={getInputClass('username')} placeholder="Il tuo nome"/>
                     {
-                        getErrorDetails('name') && (<p className='text-[10px] ml-3 p-1 font-semibold uppercase tracking-wider
-                            rounded bg-red-50 dark:bg-red-900/20 text-red-600 dark:text-red-400 inline-block'>{getErrorDetails('username')}</p>)
+                        getErrorMessage('username') && (
+                            <p className='text-[10px] ml-3 p-1 font-semibold uppercase tracking-wider rounded bg-red-50 dark:bg-red-900/20 text-red-600 dark:text-red-400 inline-block'>
+                                {getErrorMessage('username')}
+                            </p>
+                        )
                     }
                 </div>
 
@@ -138,8 +153,11 @@ function Register(){
                     <label className="block text-xs font-bold uppercase tracking-wider text-slate-500 dark:text-slate-400 mb-1 ml-4">Email</label>
                     <input type="email" id='mail' className={getInputClass('mail')} placeholder="tua@email.com" />
                     {
-                        getErrorDetails('mail') && (<p className='text-[10px] ml-3 p-1 font-semibold uppercase tracking-wider
-                            rounded bg-red-50 dark:bg-red-900/20 text-red-600 dark:text-red-400 inline-block'>{getErrorDetails('mail')}</p>)
+                        getErrorMessage('mail') && (
+                            <p className='text-[10px] ml-3 p-1 font-semibold uppercase tracking-wider rounded bg-red-50 dark:bg-red-900/20 text-red-600 dark:text-red-400 inline-block'>
+                                {getErrorMessage('mail')}
+                            </p>
+                        )
                     }
                 </div>
 
@@ -148,28 +166,34 @@ function Register(){
                         <label className="block text-xs font-bold uppercase tracking-wider text-slate-500 dark:text-slate-400 mb-1 ml-4">Password</label>
                         <input type="password" id='passwd' className={getInputClass('passwd')} placeholder="••••••••" />
                         {
-                            getErrorDetails('passwd') && (<p className='text-[10px] ml-1 p-1 font-semibold uppercase tracking-wider
-                            rounded bg-red-50 dark:bg-red-900/20 text-red-600 dark:text-red-400 inline-block'>{getErrorDetails('passwd')}</p>)
+                            getErrorMessage('passwd') && (
+                                <p className='text-[10px] ml-1 p-1 font-semibold uppercase tracking-wider rounded bg-red-50 dark:bg-red-900/20 text-red-600 dark:text-red-400 inline-block'>
+                                    {getErrorMessage('passwd')}
+                                </p>
+                            )
                         }
                     </div>
                     <div>
                         <label className="block text-xs font-bold uppercase tracking-wider text-slate-500 dark:text-slate-400 mb-1 ml-3">Conferma</label>
                         <input type="password" id='confirm_p' className={getInputClass('confirm_p')} placeholder="••••••••" />
                         {
-                            getErrorDetails('confirm_p') && (<p className='text-[10px] ml-1 p-1 font-semibold uppercase tracking-wider
-                            rounded bg-red-50 dark:bg-red-900/20 text-red-600 dark:text-red-400 inline-block'>{getErrorDetails('confirm_p')}</p>)
+                            getErrorMessage('confirm_p') && (
+                                <p className='text-[10px] ml-1 p-1 font-semibold uppercase tracking-wider rounded bg-red-50 dark:bg-red-900/20 text-red-600 dark:text-red-400 inline-block'>
+                                    {getErrorMessage('confirm_p')}
+                                </p>
+                            )
                         }
                     </div>
                 </div>
 
-                <div className={`flex flex-col gap-2 p-2 rounded-2xl transition-all ${getErrorDetails('terms') ? 'bg-red-50 dark:bg-red-900/10' : ''}`}>
+                <div className={`flex flex-col gap-2 p-2 rounded-2xl transition-all ${getErrorMessage('terms') ? 'bg-red-50 dark:bg-red-900/10' : ''}`}>
                     <div className="flex items-start gap-3">
                         <div className="flex items-center h-5">
                             <input
                                 type="checkbox"
                                 id="terms"
                                 className={`w-5 h-5 rounded border-2 transition-all cursor-pointer ${
-                                    getErrorDetails('terms')
+                                    getErrorMessage('terms')
                                         ? 'border-red-500 text-red-600'
                                         : 'border-slate-300 dark:border-slate-700 text-blue-600'
                                 }`}
@@ -181,9 +205,9 @@ function Register(){
                     </div>
 
                     {/* Messaggio d'errore specifico per la checkbox */}
-                    {getErrorDetails('terms') && (
+                    {getErrorMessage('terms') && (
                         <p className='text-[10px] ml-8 font-bold uppercase text-red-600 dark:text-red-400'>
-                            {getErrorDetails('terms')}
+                            {getErrorMessage('terms')}
                         </p>
                     )}
                 </div>

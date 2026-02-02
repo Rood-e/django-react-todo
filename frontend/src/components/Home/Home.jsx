@@ -1,11 +1,12 @@
 import { useState, useEffect } from "react";
-import ThemeButton from "./ThemeButton.jsx";
+import ThemeButton from "../ThemeButton.jsx";
 import FeatureDisplay from "./FeatureDisplay.jsx";
 import HeroSection from "./HeroSection.jsx";
 
 import { Link } from 'react-router-dom';
 
 import { PencilIcon, CloudArrowUpIcon, Squares2X2Icon, ArchiveBoxIcon, SparklesIcon, ArrowPathRoundedSquareIcon, ChartBarIcon } from '@heroicons/react/24/outline';
+import Buttons from "./Buttons.jsx";
 
 const features = [
     {
@@ -67,16 +68,7 @@ function Home({isDark, setIsDark}) {
             </div>
 
             <div className="absolute top-6 right-6 flex items-center gap-4 z-50">
-                <Link to="/login"  className="px-4 py-2 text-sm font-bold text-slate-600 dark:text-slate-400
-                   hover:text-blue-600 dark:hover:text-blue-400 transition-colors">
-                    Accedi
-                </Link>
-
-                <Link to="/register" className="px-4 py-2.5 bg-blue-600 dark:bg-blue-500 text-white text-xs font-black
-                   uppercase tracking-widest rounded-full shadow-lg shadow-blue-500/20
-                   hover:shadow-blue-500/40 hover:-translate-y-0.5 active:scale-95 transition-all">
-                    Crea Account
-                </Link>
+                <Buttons/>
             </div>
 
             {/* Hero */}

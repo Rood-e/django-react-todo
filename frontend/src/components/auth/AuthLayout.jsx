@@ -1,18 +1,23 @@
 import ThemeButton from "../ThemeButton.jsx";
 import { MeshGradient } from '@paper-design/shaders-react';
 import {useEffect, useState} from "react";
+import {useNavigate} from "react-router-dom";
 
 const lightColors = ["#FFFFFF", "#F0F9FF", "#3B82F6", "#DBEAFE"];
 const darkColors = ["#142749", "#1549c5", "#3469a6", "#0e2160"];
 
 function AuthLayout({children,isDark,setIsDark}) {
     const [isTransitioning, setIsTransitioning] = useState(false);
+    const navigate = useNavigate();
 
     useEffect(() => {
         setIsTransitioning(true);
         const timeout = setTimeout(() => setIsTransitioning(false), 200);
         return () => clearTimeout(timeout);
     }, [isDark]);
+
+    if(localStorage.getItem('token'))
+        navigate('/app');
 
     return (
         <div className="min-h-screen flex items-center justify-center bg-slate-50 dark:bg-slate-950 px-4 transition-colors duration-250">
