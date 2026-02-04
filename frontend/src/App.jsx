@@ -1,16 +1,17 @@
 import { Routes, Route } from 'react-router-dom';
 import {useEffect, useState} from "react";
 
+import Home from './components/Home/Home.jsx';
 import LegalHub from './components/legal/LegalHub';
 import PrivacyContent from "./components/legal/PrivacyContent.jsx";
 import TermsContent from "./components/legal/TermsContent.jsx";
 import ContactForm from './components/legal/ContactForm.jsx';
-import Home from './components/Home/Home.jsx';
 import AuthLayout from "./components/auth/AuthLayout.jsx";
 import Register from "./components/auth/Register.jsx";
 import Login from "./components/auth/Login.jsx";
 import Error404 from './components/Error404';
 import Error401 from "./components/Error401.jsx";
+import AppLayout from './components/app/AppLayout.jsx';
 
 function App(){
     const [isDark, setIsDark] = useState(() => {
@@ -49,6 +50,9 @@ function App(){
 
                 <Route path='/app' element={
                     <Error401>
+                        <AppLayout isDark={isDark} setIsDark={setIsDark}>
+
+                        </AppLayout>
                         {/*<AuthLayout isDark={isDark} setIsDark={setIsDark}>*/}
                         {/*    <PrivacyContent />*/}
                         {/*</AuthLayout>*/}

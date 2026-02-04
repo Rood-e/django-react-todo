@@ -69,8 +69,8 @@ function Login(){
             // Salviamo il token nel localStorage per usarlo nelle chiamate future
             localStorage.setItem('token', response.data.token);
 
-            // Opzionale: puoi salvare anche lo username o l'email se ti servono in UI
-            localStorage.setItem('user_email', response.data.email);
+            // Salvataggio dell'username
+            localStorage.setItem('user', response.data.username);
 
             navigate('/app');
         } catch (e) {

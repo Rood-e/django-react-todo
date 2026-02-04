@@ -1,4 +1,5 @@
 from django.contrib.auth import authenticate, get_user_model
+from django.utils import timezone
 from rest_framework import generics, status
 from rest_framework.authtoken.models import Token
 from rest_framework.authtoken.views import ObtainAuthToken
@@ -48,11 +49,13 @@ class Login(ObtainAuthToken):
 
         if user is not None:
             token, created = Token.objects.get_or_create(user=user)
+
+            user.last_login = timezone.now()
+            user.save(update_fields=['last_login'])
+
             return Response({
                 'token': token.key,
-                'user_id': user.pk,
                 'username': user.username,
-                'email': user.email,
             })
         else:
             return Response({
