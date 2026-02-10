@@ -20,6 +20,20 @@ class UserSerializer(serializers.ModelSerializer):
             }
         }
 
+    def validate_email(self, value):
+        # Controlla se l'email è già usata da ALTRI utenti
+        user = self.context['request'].user
+        if User.objects.exclude(pk=user.pk).filter(email=value).exists():
+            raise serializers.ValidationError("Questa email è già associata a un account.")
+        return value
+
+    def validate_username(self, value):
+        # Controlla se lo username è già usato da ALTRI utenti
+        user = self.context['request'].user
+        if User.objects.exclude(pk=user.pk).filter(username=value).exists():
+            raise serializers.ValidationError("Questo username è già in uso.")
+        return value
+
     # Restituisce l'istanza dell'USER appena creato
     def create(self, validated_data):
         user = User.objects.create_user(

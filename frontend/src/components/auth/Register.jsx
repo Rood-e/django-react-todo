@@ -1,7 +1,9 @@
 import {Link, useNavigate} from 'react-router-dom';
 import {useState} from "react";
-import {ArrowLeftIcon} from "@heroicons/react/24/outline";
 import api from "../../api.js";
+
+import {ArrowLeftIcon} from "@heroicons/react/24/outline";
+import LoadingOverlay from '../aesthetic/LoadingOverlay.jsx'
 
 // Parametri invertiti per coerenza con la chiamata nel try/catch
 const sendRegistration = async (data) => {
@@ -13,10 +15,16 @@ function Register(){
     const [backendErrors, setBackendErrors] = useState({}); // Errori dal Database (Django)
     const navigate = useNavigate();
 
+    const [loading, setLoading] = useState(false);
+    const [loadingMessage, setLoadingMessage] = useState('');
+
     const handleSubmit = async (e) => {
         e.preventDefault();
         setErrors([]);
         setBackendErrors({});
+
+        setLoadingMessage('Registrazione in corso...');
+        setLoading(true);
 
         const name = document.getElementById('username');
         const mail = document.getElementById('mail');
@@ -80,6 +88,8 @@ function Register(){
 
         if (currentErrors.length > 0) {
             setErrors(currentErrors);
+            setLoading(false);
+            setLoadingMessage('')
             return;
         }
 
@@ -98,6 +108,9 @@ function Register(){
                 setBackendErrors(e.response.data);
             else
                 console.error("Errore critico:", e);
+        }finally{
+            setLoading(false);
+            setLoadingMessage('')
         }
     }
 
@@ -135,100 +148,103 @@ function Register(){
     };
 
     return (
-        <form id='registerForm' onSubmit={handleSubmit} className="space-y-6">
-            <div className="grid grid-cols-1 gap-5">
-                <div className="group">
-                    <label className="block text-xs font-bold uppercase tracking-wider text-slate-500 dark:text-slate-400 mb-1 ml-4">Nome</label>
-                    <input type="text" id='username' className={getInputClass('username')} placeholder="Il tuo nome"/>
-                    {
-                        getErrorMessage('username') && (
-                            <p className='text-[10px] ml-3 p-1 font-semibold uppercase tracking-wider rounded bg-red-50 dark:bg-red-900/20 text-red-600 dark:text-red-400 inline-block'>
-                                {getErrorMessage('username')}
-                            </p>
-                        )
-                    }
-                </div>
-
-                <div className="group">
-                    <label className="block text-xs font-bold uppercase tracking-wider text-slate-500 dark:text-slate-400 mb-1 ml-4">Email</label>
-                    <input type="email" id='mail' className={getInputClass('mail')} placeholder="tua@email.com" />
-                    {
-                        getErrorMessage('mail') && (
-                            <p className='text-[10px] ml-3 p-1 font-semibold uppercase tracking-wider rounded bg-red-50 dark:bg-red-900/20 text-red-600 dark:text-red-400 inline-block'>
-                                {getErrorMessage('mail')}
-                            </p>
-                        )
-                    }
-                </div>
-
-                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                    <div>
-                        <label className="block text-xs font-bold uppercase tracking-wider text-slate-500 dark:text-slate-400 mb-1 ml-4">Password</label>
-                        <input type="password" id='passwd' className={getInputClass('passwd')} placeholder="••••••••" />
+        <div className='relative'>
+            {loading && <LoadingOverlay message={loadingMessage}/>}
+            <form id='registerForm' onSubmit={handleSubmit} className="space-y-6">
+                <div className="grid grid-cols-1 gap-5">
+                    <div className="group">
+                        <label className="block text-xs font-bold uppercase tracking-wider text-slate-500 dark:text-slate-400 mb-1 ml-4">Nome</label>
+                        <input type="text" id='username' className={getInputClass('username')} placeholder="Il tuo nome"/>
                         {
-                            getErrorMessage('passwd') && (
-                                <p className='text-[10px] ml-1 p-1 font-semibold uppercase tracking-wider rounded bg-red-50 dark:bg-red-900/20 text-red-600 dark:text-red-400 inline-block'>
-                                    {getErrorMessage('passwd')}
+                            getErrorMessage('username') && (
+                                <p className='text-[10px] ml-3 p-1 font-semibold uppercase tracking-wider rounded bg-red-50 dark:bg-red-900/20 text-red-600 dark:text-red-400 inline-block'>
+                                    {getErrorMessage('username')}
                                 </p>
                             )
                         }
                     </div>
-                    <div>
-                        <label className="block text-xs font-bold uppercase tracking-wider text-slate-500 dark:text-slate-400 mb-1 ml-3">Conferma</label>
-                        <input type="password" id='confirm_p' className={getInputClass('confirm_p')} placeholder="••••••••" />
+
+                    <div className="group">
+                        <label className="block text-xs font-bold uppercase tracking-wider text-slate-500 dark:text-slate-400 mb-1 ml-4">Email</label>
+                        <input type="email" id='mail' className={getInputClass('mail')} placeholder="tua@email.com" />
                         {
-                            getErrorMessage('confirm_p') && (
-                                <p className='text-[10px] ml-1 p-1 font-semibold uppercase tracking-wider rounded bg-red-50 dark:bg-red-900/20 text-red-600 dark:text-red-400 inline-block'>
-                                    {getErrorMessage('confirm_p')}
+                            getErrorMessage('mail') && (
+                                <p className='text-[10px] ml-3 p-1 font-semibold uppercase tracking-wider rounded bg-red-50 dark:bg-red-900/20 text-red-600 dark:text-red-400 inline-block'>
+                                    {getErrorMessage('mail')}
                                 </p>
                             )
                         }
                     </div>
-                </div>
 
-                <div className={`flex flex-col gap-2 p-2 rounded-2xl transition-all ${getErrorMessage('terms') ? 'bg-red-50 dark:bg-red-900/10' : ''}`}>
-                    <div className="flex items-start gap-3">
-                        <div className="flex items-center h-5">
-                            <input
-                                type="checkbox"
-                                id="terms"
-                                className={`w-5 h-5 rounded border-2 transition-all cursor-pointer ${
-                                    getErrorMessage('terms')
-                                        ? 'border-red-500 text-red-600'
-                                        : 'border-slate-300 dark:border-slate-700 text-blue-600'
-                                }`}
-                            />
+                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                        <div>
+                            <label className="block text-xs font-bold uppercase tracking-wider text-slate-500 dark:text-slate-400 mb-1 ml-4">Password</label>
+                            <input type="password" id='passwd' className={getInputClass('passwd')} placeholder="••••••••" />
+                            {
+                                getErrorMessage('passwd') && (
+                                    <p className='text-[10px] ml-1 p-1 font-semibold uppercase tracking-wider rounded bg-red-50 dark:bg-red-900/20 text-red-600 dark:text-red-400 inline-block'>
+                                        {getErrorMessage('passwd')}
+                                    </p>
+                                )
+                            }
                         </div>
-                        <label htmlFor="terms" className="text-sm text-slate-600 dark:text-slate-400 leading-tight cursor-pointer">
-                            Accetto i <Link to='/legal/terms' className='text-blue-500 font-medium'>Termini</Link> e la <Link to='/legal/privacy' className='text-blue-500 font-medium'>Privacy Policy</Link>
-                        </label>
+                        <div>
+                            <label className="block text-xs font-bold uppercase tracking-wider text-slate-500 dark:text-slate-400 mb-1 ml-3">Conferma</label>
+                            <input type="password" id='confirm_p' className={getInputClass('confirm_p')} placeholder="••••••••" />
+                            {
+                                getErrorMessage('confirm_p') && (
+                                    <p className='text-[10px] ml-1 p-1 font-semibold uppercase tracking-wider rounded bg-red-50 dark:bg-red-900/20 text-red-600 dark:text-red-400 inline-block'>
+                                        {getErrorMessage('confirm_p')}
+                                    </p>
+                                )
+                            }
+                        </div>
                     </div>
 
-                    {/* Messaggio d'errore specifico per la checkbox */}
-                    {getErrorMessage('terms') && (
-                        <p className='text-[10px] ml-8 font-bold uppercase text-red-600 dark:text-red-400'>
-                            {getErrorMessage('terms')}
-                        </p>
-                    )}
+                    <div className={`flex flex-col gap-2 p-2 rounded-2xl transition-all ${getErrorMessage('terms') ? 'bg-red-50 dark:bg-red-900/10' : ''}`}>
+                        <div className="flex items-start gap-3">
+                            <div className="flex items-center h-5">
+                                <input
+                                    type="checkbox"
+                                    id="terms"
+                                    className={`w-5 h-5 rounded border-2 transition-all cursor-pointer ${
+                                        getErrorMessage('terms')
+                                            ? 'border-red-500 text-red-600'
+                                            : 'border-slate-300 dark:border-slate-700 text-blue-600'
+                                    }`}
+                                />
+                            </div>
+                            <label htmlFor="terms" className="text-sm text-slate-600 dark:text-slate-400 leading-tight cursor-pointer">
+                                Accetto i <Link to='/legal/terms' className='text-blue-500 font-medium'>Termini</Link> e la <Link to='/legal/privacy' className='text-blue-500 font-medium'>Privacy Policy</Link>
+                            </label>
+                        </div>
+
+                        {/* Messaggio d'errore specifico per la checkbox */}
+                        {getErrorMessage('terms') && (
+                            <p className='text-[10px] ml-8 font-bold uppercase text-red-600 dark:text-red-400'>
+                                {getErrorMessage('terms')}
+                            </p>
+                        )}
+                    </div>
                 </div>
-            </div>
 
-            <p className={'text-xs text-center text-slate-500'}> Hai già un account? <Link to={'/login'} className={'text-blue-500 font-bold hover:underline'}> Accedi </Link> </p>
+                <p className={'text-xs text-center text-slate-500'}> Hai già un account? <Link to={'/login'} className={'text-blue-500 font-bold hover:underline'}> Accedi </Link> </p>
 
-            <button type="submit" className="w-full py-4 bg-blue-600 hover:bg-blue-500 text-white
+                <button type="submit" className="w-full py-4 bg-blue-600 hover:bg-blue-500 text-white
                 font-black uppercase tracking-widest text-sm rounded-2xl transition-all
                 shadow-lg shadow-blue-500/30 hover:shadow-blue-500/50 hover:-translate-y-1
                 active:scale-95 cursor-pointer">
-                Crea nuovo account
-            </button>
-            <div className='w-1/2 text-xs m-0'>
-                <Link to="/"
-                      className="flex items-center gap-3 px-3 py-1.5 rounded-xl text-slate-600 dark:text-white  hover:bg-blue-50 dark:hover:bg-blue-900/20 transition-all group">
-                    <ArrowLeftIcon className="w-4 h-4 transition-transform group-hover:-translate-x-1" />
-                    Torna alla Home
-                </Link>
-            </div>
-        </form>
+                    Crea nuovo account
+                </button>
+                <div className='w-1/2 text-xs m-0'>
+                    <Link to="/"
+                          className="flex items-center gap-3 px-3 py-1.5 rounded-xl text-slate-600 dark:text-white  hover:bg-blue-50 dark:hover:bg-blue-900/20 transition-all group">
+                        <ArrowLeftIcon className="w-4 h-4 transition-transform group-hover:-translate-x-1" />
+                        Torna alla Home
+                    </Link>
+                </div>
+            </form>
+        </div>
     )
 }
 

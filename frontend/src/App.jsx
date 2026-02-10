@@ -9,6 +9,7 @@ import ContactForm from './components/legal/ContactForm.jsx';
 import AuthLayout from "./components/auth/AuthLayout.jsx";
 import Register from "./components/auth/Register.jsx";
 import Login from "./components/auth/Login.jsx";
+import Settings from "./components/auth/AccountSettings.jsx";
 import Error404 from './components/Error404';
 import Error401 from "./components/Error401.jsx";
 import AppLayout from './components/app/AppLayout.jsx';
@@ -51,12 +52,12 @@ function App(){
                 <Route path='/app' element={
                     <Error401>
                         <AppLayout isDark={isDark} setIsDark={setIsDark}>
-
                         </AppLayout>
-                        {/*<AuthLayout isDark={isDark} setIsDark={setIsDark}>*/}
-                        {/*    <PrivacyContent />*/}
-                        {/*</AuthLayout>*/}
                     </Error401>
+                }/>
+
+                <Route path='/app/account' element={
+                    <Error401><Settings/></Error401>
                 }/>
 
 

@@ -1,9 +1,7 @@
-import { Bars3Icon, CalendarDaysIcon, PlusIcon, ChevronDownIcon } from '@heroicons/react/24/outline';
+import {Bars3Icon, CalendarDaysIcon, PlusIcon, ChevronDownIcon, Cog6ToothIcon} from '@heroicons/react/24/outline';
 import { Link } from "react-router-dom";
-import { useState } from "react";
 
-function Sidebar() {
-    const [isOpen, setIsOpen] = useState(true);
+function Sidebar({isOpen,setIsOpen}) {
 
     return (
         <div className={`min-h-screen border-r border-slate-200 dark:border-slate-800 flex flex-col p-4 justify-between transition-all duration-500 ease-in-out ${isOpen ? 'w-64' : 'w-20'}`}>
@@ -40,9 +38,9 @@ function Sidebar() {
                 </div>
 
                 {/* Voce Calendario */}
-                <div className="flex items-center h-12 text-slate-600 dark:text-slate-400 cursor-pointer mb-6 group transition-all">
+                <div className="flex items-center h-12 text-slate-600 dark:text-slate-400 cursor-pointer mb-6 group transition-all hover:bg-blue-50 dark:hover:bg-blue-900/20 rounded-2xl">
                     <div className={`flex items-center justify-center transition-all duration-500 ${isOpen ? 'w-12' : 'w-full'}`}>
-                        <div className="p-2 rounded-xl group-hover:bg-blue-50 dark:group-hover:bg-blue-900/20 transition-all">
+                        <div className="p-2 rounded-xl transition-all">
                             <CalendarDaysIcon className="w-7 h-7 min-w-7 group-hover:text-blue-600 dark:group-hover:text-blue-500 transition-colors" />
                         </div>
                     </div>
@@ -58,16 +56,30 @@ function Sidebar() {
                 </div>
             </div>
 
-            {/* Brand */}
-            <div className="h-12 flex items-center overflow-hidden">
-                <Link to={'/'} className="flex items-center w-full group">
-                    <div className={`flex items-center justify-center transition-all duration-500 ${isOpen ? 'w-12' : 'w-full'}`}>
-                        <span className="text-blue-600 text-3xl font-black group-hover:scale-110 transition-transform">T</span>
-                    </div>
-                    <div className={`transition-all duration-500 whitespace-nowrap overflow-hidden -ml-3.5 mt-1 ${isOpen ? 'max-w-xs opacity-100' : 'max-w-0 opacity-0'}`}>
-                        <span className="text-slate-900 dark:text-white font-black text-2xl">askMaster</span>
+            <div className={'flex flex-col gap-1'}>
+                <Link to={'/app/account'}>
+                    <div className="flex items-center h-12 text-slate-500 dark:text-slate-400 cursor-pointer group ìhover:bg-slate-100 dark:hover:bg-slate-800 rounded-2xl ">
+                        <div className={`flex items-center justify-center transition-all duration-500 ${isOpen ? 'w-12' : 'w-full'}`}>
+                            <div className="p-2 rounded-xl transition-all">
+                                <Cog6ToothIcon className="w-7 h-7 min-w-7 group-hover:rotate-90 transition-transform duration-500" />
+                            </div>
+                        </div>
+                        <span className={`font-medium transition-all duration-500 whitespace-nowrap overflow-hidden group-hover:text-slate-900 dark:group-hover:text-white ${isOpen ? 'max-w-xs opacity-100 ml-2' : 'max-w-0 opacity-0'}`}>
+                            Impostazioni
+                        </span>
                     </div>
                 </Link>
+                {/* Brand */}
+                <div className="h-12 flex items-center overflow-hidden border-t border-slate-100 dark:border-slate-800">
+                    <Link to={'/'} className="flex items-center w-full group hover:scale-105 transition-transform duration-300 origin-left">
+                        <div className={`flex items-center justify-center transition-all duration-500 ${isOpen ? 'w-12' : 'w-full'}`}>
+                            <span className="text-blue-600 text-3xl font-black">T</span>
+                        </div>
+                        <div className={`transition-all duration-500 whitespace-nowrap overflow-hidden -ml-3.5 mt-1 ${isOpen ? 'max-w-xs opacity-100' : 'max-w-0 opacity-0'}`}>
+                            <span className="text-slate-900 dark:text-white font-black text-2xl">askMaster</span>
+                        </div>
+                    </Link>
+                </div>
             </div>
         </div>
     );
