@@ -8,8 +8,8 @@ from rest_framework.permissions import AllowAny
 from rest_framework.response import Response
 from rest_framework.views import APIView
 
-from .serializers import UserSerializer
-
+from .models import Task
+from .serializers import UserSerializer, TaskSerializer
 
 # Contiene la logica di selezione e azione (Il "Cervello").
 # Esempio: getAllTasks().
@@ -115,3 +115,36 @@ class UserProfile(APIView):
         user = request.user
         user.delete() # In automatico rimuove anche il token
         return Response(status=status.HTTP_204_NO_CONTENT)
+
+class Tasks(APIView):
+    authentication_classes = [authentication.TokenAuthentication]
+    permission_classes = [permissions.IsAuthenticated]
+
+    def get(self, request):
+        # Prendiamo i parametri dalla URL, con valori di default
+        try:
+            limit = int(request.query_params.get('limit', 10))
+            offset = int(request.query_params.get('offset', 0))
+        except ValueError:
+            limit = 10
+            offset = 0
+
+        # Query filtrata per utente
+        queryset = Task.objects.filter(
+            created_by=request.user,
+            is_active=True
+        )
+
+        # Contiamo il totale prima di affettare la lista (utile per il frontend)
+        total_count = queryset.count()
+
+        # "Affettiamo" il queryset: [inizio : fine]
+        tasks = queryset[offset : offset + limit]
+
+        serializer = TaskSerializer(tasks, many=True)
+
+        return Response({
+            'tasks': serializer.data,
+            'total': total_count,
+            'has_more': offset + limit < total_count
+        })

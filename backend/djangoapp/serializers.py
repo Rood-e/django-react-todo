@@ -1,5 +1,5 @@
 from rest_framework import serializers
-from .models import User
+from .models import User, Task
 
 # Contiene la logica di trasformazione.
 # Esempio: Un metodo che prende la data dal DB e la formatta in "20 ore fa" invece di "2026-01-30".
@@ -42,3 +42,17 @@ class UserSerializer(serializers.ModelSerializer):
             password = validated_data['password']
         )
         return user
+
+class TaskSerializer(serializers.ModelSerializer):
+    # Mostriamo lo username del creatore invece dell'ID (opzionale, ma utile)
+    created_by_name = serializers.ReadOnlyField(source='created_by.username')
+
+    class Meta:
+        model = Task
+        fields = [
+            'id', 'title', 'content', 'priority', 'status',
+            'is_active', 'due_date', 'created_by', 'created_by_name',
+            'categories', 'created_at', 'updated_at'
+        ]
+        # Il campo created_by lo impostiamo noi nel backend, non l'utente dal form
+        read_only_fields = ['created_by', 'created_at', 'updated_at']

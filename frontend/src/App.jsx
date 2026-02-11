@@ -13,6 +13,7 @@ import Settings from "./components/auth/AccountSettings.jsx";
 import Error404 from './components/Error404';
 import Error401 from "./components/Error401.jsx";
 import AppLayout from './components/app/AppLayout.jsx';
+import Dashboard from "./components/app/Dashboard.jsx";
 
 function App(){
     const [isDark, setIsDark] = useState(() => {
@@ -54,7 +55,10 @@ function App(){
                         <AppLayout isDark={isDark} setIsDark={setIsDark}>
                         </AppLayout>
                     </Error401>
-                }/>
+                }>
+                    <Route index element={<Dashboard/>}/>
+                </Route>
+
 
                 <Route path='/app/account' element={
                     <Error401><Settings/></Error401>
