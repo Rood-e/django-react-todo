@@ -26,10 +26,17 @@ class Task(models.Model):
         ('tostart','Da Iniziare')
     ]
 
+    TYPE_CHOICES = [
+        ('note', 'Nota Classica'),
+        ('list', 'Checklist'),
+        ('event', 'Evento/Scadenza')
+    ]
+
     title = models.CharField(max_length=100)
     content = models.TextField(blank=True)
     priority = models.IntegerField(default=0)
     status = models.CharField(max_length=30,choices=STATUS_CHOICES,default='pending')
+    type = models.CharField(max_length=30,choices=TYPE_CHOICES,default='note')
     is_active = models.BooleanField(default=True)
     due_date = models.DateField(null=True,blank=True)
 

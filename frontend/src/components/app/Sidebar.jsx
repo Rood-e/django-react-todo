@@ -1,7 +1,28 @@
-import {Bars3Icon, CalendarDaysIcon, PlusIcon, ChevronDownIcon, Cog6ToothIcon, ChartBarSquareIcon} from '@heroicons/react/24/outline';
-import { Link } from "react-router-dom";
+import {
+    Bars3Icon, CalendarDaysIcon, PlusIcon, ChevronDownIcon, Cog6ToothIcon, ChartBarSquareIcon,
+    ArrowLeftOnRectangleIcon
+} from '@heroicons/react/24/outline';
+import {Link, useNavigate} from "react-router-dom";
+import api from "../../api.js";
 
 function Sidebar({isOpen,setIsOpen}) {
+    const navigate = useNavigate();
+
+    const handleLogout = async () => {
+        try {
+            await api.post('logout/');
+        } catch (err) {
+            console.error("Errore durante il logout lato server:", err);
+
+        } finally { // Anche se il server fallisce, procediamo a pulire il locale per sicurezza
+            localStorage.removeItem('token');
+            localStorage.removeItem('user');
+
+            // Ritorno alla home
+            navigate('/');
+        }
+    };
+
     return (
         <div className={`min-h-screen border-r border-slate-200 dark:border-slate-800 flex flex-col p-4 justify-between transition-all duration-500 ease-in-out ${isOpen ? 'w-64' : 'w-20'}`}>
             <div className="overflow-hidden">
@@ -63,6 +84,18 @@ function Sidebar({isOpen,setIsOpen}) {
             </div>
 
             <div className={'flex flex-col gap-1'}>
+                <div
+                    onClick={handleLogout}
+                    className="flex items-center h-12 text-red-500 cursor-pointer group hover:bg-red-50 dark:hover:bg-red-900/20 rounded-2xl transition-all">
+                    <div className={`flex items-center justify-center transition-all duration-500 ${isOpen ? 'w-12' : 'w-full'}`}>
+                        <div className="p-2 rounded-xl transition-all">
+                            <ArrowLeftOnRectangleIcon className="w-7 h-7 min-w-7 group-hover:scale-110 transition-transform" />
+                        </div>
+                    </div>
+                    <span className={`font-bold transition-all duration-500 whitespace-nowrap overflow-hidden ${isOpen ? 'max-w-xs opacity-100 ml-2' : 'max-w-0 opacity-0'}`}>
+                    Esci
+                </span>
+                </div>
                 <Link to={'/app/account'}>
                     <div className="flex items-center h-12 text-slate-500 dark:text-slate-400 cursor-pointer group hover:bg-slate-200 dark:hover:bg-slate-800 rounded-2xl ">
                         <div className={`flex items-center justify-center transition-all duration-500 ${isOpen ? 'w-12' : 'w-full'}`}>

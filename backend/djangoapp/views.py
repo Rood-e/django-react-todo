@@ -64,6 +64,15 @@ class Login(ObtainAuthToken):
                 'error': "Credenziali non valide"
             }, status=status.HTTP_400_BAD_REQUEST)
 
+class Logout(APIView):
+    permission_classes = [AllowAny]
+    def post(self, request, *args, **kwargs):
+        try:
+            request.user.auth_token.delete()
+            return Response({"message":"Logout effettuato con successo"},status=status.HTTP_204_NO_CONTENT)
+        except Exception as e:
+            return Response({"error": str(e)},status=status.HTTP_400_BAD_REQUEST)
+
 class UserProfile(APIView):
     # Questi due garantiscono che solo chi ha un TOKEN valido possa entrare
     authentication_classes = [authentication.TokenAuthentication]

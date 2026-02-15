@@ -1,5 +1,5 @@
 import { Routes, Route } from 'react-router-dom';
-import {useEffect, useState} from "react";
+import { useEffect, useState } from "react";
 
 import Home from './components/Home/Home.jsx';
 import LegalHub from './components/legal/LegalHub';
@@ -14,8 +14,9 @@ import Error404 from './components/Error404';
 import Error401 from "./components/Error401.jsx";
 import AppLayout from './components/app/AppLayout.jsx';
 import Dashboard from "./components/app/Dashboard.jsx";
+import TaskDetail from "./components/app/TaskDetail.jsx"; // Il nuovo componente ibrido
 
-function App(){
+function App() {
     const [isDark, setIsDark] = useState(() => {
         return localStorage.theme === 'dark' ||
             (!('theme' in localStorage) && window.matchMedia('(prefers-color-scheme: dark)').matches);
@@ -34,6 +35,7 @@ function App(){
     return (
         <div className={isDark ? 'dark' : ''}>
             <Routes>
+                {/* Public Routes */}
                 <Route path="/" element={<Home isDark={isDark} setIsDark={setIsDark}/>} />
 
                 <Route path='/legal' element={<LegalHub isDark={isDark} setIsDark={setIsDark}/>}>
@@ -43,28 +45,33 @@ function App(){
                 </Route>
 
                 <Route path='/login' element={
-                  <AuthLayout children={<Login/>} isDark={isDark} setIsDark={setIsDark}/>
+                    <AuthLayout isDark={isDark} setIsDark={setIsDark}><Login/></AuthLayout>
                 }/>
 
                 <Route path='/register' element={
-                  <AuthLayout children={<Register/>} isDark={isDark} setIsDark={setIsDark}/>
+                    <AuthLayout isDark={isDark} setIsDark={setIsDark}><Register/></AuthLayout>
                 }/>
 
+                {/* App Routes (Protette da Error401) */}
                 <Route path='/app' element={
                     <Error401>
-                        <AppLayout isDark={isDark} setIsDark={setIsDark}>
-                        </AppLayout>
+                        <AppLayout isDark={isDark} setIsDark={setIsDark} />
                     </Error401>
                 }>
-                    <Route index element={<Dashboard/>}/>
+                    {/* /app */}
+                    <Route index element={<Dashboard />} />
+
+                    {/* /app/task/new o /app/task/123 */}
+                    <Route path="task/:id" element={<TaskDetail />} />
+
+                    {/* Spostata qui per mantenere Sidebar e Layout */}
+                    <Route path="account" element={<Settings />} />
+
+                    {/* Futura rotta Calendario */}
+                    {/* <Route path="calendar" element={<Calendar />} /> */}
                 </Route>
 
-
-                <Route path='/app/account' element={
-                    <Error401><Settings/></Error401>
-                }/>
-
-
+                {/* Catch-all 404 */}
                 <Route path='*' element={<Error404/>}/>
             </Routes>
         </div>

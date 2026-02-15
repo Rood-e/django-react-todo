@@ -11,5 +11,7 @@ urlpatterns = [
     path('user/update/',views.UserProfile.as_view(),name='user_update'),
     path('user/delete/',views.UserProfile.as_view(),name='user_delete'),
 
+    path('logout/',views.Logout.as_view(),name='logout'),
+
     path('tasks/',views.Tasks.as_view(),name='tasks'),
 ]

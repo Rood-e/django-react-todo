@@ -8,7 +8,7 @@ function AppLayout({isDark, setIsDark}) {
 
     return (
         <div className="min-h-screen bg-slate-50 dark:bg-slate-950 ">
-            <div className="fixed top-6 right-6 z-50">
+            <div className="fixed top-6 right-6 z-100">
                 <ThemeButton isDark={isDark} setIsDark={setIsDark}/>
             </div>
 
@@ -18,7 +18,7 @@ function AppLayout({isDark, setIsDark}) {
                 </aside>
 
                 {/* Sezione a destra: In base all'URL capisce cosa inserire */}
-                <main className="w-full bg-white dark:bg-slate-900 p-10 shadow-sm">
+                <main className="w-full bg-white dark:bg-slate-900 p-10 shadow-sm overflow-hidden">
                     <Outlet />
                 </main>
             </div>

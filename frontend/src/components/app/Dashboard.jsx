@@ -80,7 +80,7 @@ function Dashboard() {
             {/* INTESTAZIONE */}
             <header>
                 <h1 className="text-4xl font-black text-slate-900 dark:text-white uppercase">
-                    Dashboard
+                    Bentornato, <span className='text-blue-600'>{localStorage.getItem('user')}</span>
                 </h1>
                 <p className="text-slate-500 font-medium">Gestione attività e statistiche.</p>
             </header>
@@ -99,28 +99,45 @@ function Dashboard() {
                 </h2>
 
                 <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
-                    {tasks.map((task) => (
-                        <Link to={`task/${task.id}`} key={task.id}>
-                            <div key={task.id} className="p-5 bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-3xl flex items-center justify-between transition-all shadow-sm dark:shadow-blue-500/30 hover:scale-105">
-                                <div className="flex items-center gap-4">
-                                    {/* Checkbox basata sullo status del model */}
-                                    <input
-                                        type="checkbox"
-                                        checked={task.status === 'completed'}
-                                        readOnly
-                                        className="w-6 h-6 rounded-full border-2 border-slate-300 checked:bg-blue-600 cursor-pointer"
-                                    />
-                                    <div>
-                                        <h3 className="font-bold text-slate-900 dark:text-white">{task.title}</h3>
-                                        <p className="text-xs text-slate-400">Scadenza: {task.due_date || 'Nessuna'}</p>
+                    {tasks.length > 0 ? (
+                        tasks.map((task) => (
+                            /* La key va qui, sul componente più esterno del map */
+                            <Link to={`/task/edit/${task.id}`} key={task.id} className="block group">
+                                <div className="p-5 bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-3xl flex items-center justify-between transition-all duration-300 shadow-sm hover:shadow-xl hover:shadow-blue-500/10 hover:-translate-y-1 border-b-4 hover:border-blue-500">
+                                    <div className="flex items-center gap-4">
+                                        <input
+                                            type="checkbox"
+                                            checked={task.status === 'completed'}
+                                            readOnly
+                                            className="w-6 h-6 rounded-full border-2 border-slate-300 checked:bg-blue-600 cursor-pointer transition-colors"
+                                        />
+                                        <div>
+                                            <h3 className="font-bold text-slate-900 dark:text-white group-hover:text-blue-600 transition-colors">
+                                                {task.title}
+                                            </h3>
+                                            <p className="text-xs text-slate-400 font-medium">
+                                                Scadenza: {task.due_date || 'Nessuna'}
+                                            </p>
+                                        </div>
                                     </div>
+                                    <span className={`text-[10px] font-black uppercase px-3 py-1 rounded-full ${
+                                        task.status === 'completed'
+                                            ? 'bg-green-100 text-green-600 dark:bg-green-900/30'
+                                            : 'bg-slate-100 text-slate-500 dark:bg-slate-700'
+                                    }`}>
+                                        {task.status}
+                                    </span>
                                 </div>
-                                <span className="text-[10px] font-black uppercase px-3 py-1 bg-slate-100 dark:bg-slate-700 rounded-full text-slate-500">
-                                {task.status}
-                            </span>
-                            </div>
-                        </Link>
-                    ))}
+                            </Link>
+                        ))
+                    ) : (
+                        <div className="col-span-full text-center p-12 bg-slate-50 dark:bg-slate-800/20 rounded-[3rem] border-2 border-dashed border-slate-200 dark:border-slate-800">
+                            <p className="text-slate-500 font-bold uppercase tracking-widest text-xs">Nessuna task trovata</p>
+                            <Link to="task/new" className="inline-block mt-4 text-blue-600 font-black hover:underline decoration-2 underline-offset-4">
+                                CREANE UNA SUBITO
+                            </Link>
+                        </div>
+                    )}
                 </div>
 
                 {/* TASTO CARICA ALTRI (Appare solo se hasMore è vero) */}
