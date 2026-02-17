@@ -129,8 +129,21 @@ class Tasks(APIView):
     authentication_classes = [authentication.TokenAuthentication]
     permission_classes = [permissions.IsAuthenticated]
 
-    def get(self, request):
-        # Prendiamo i parametri dalla URL, con valori di default
+    def get_object(self, pk, user):
+        try:
+            return Task.objects.get(pk=pk, created_by=user)
+        except Task.DoesNotExist:
+            return None
+
+    def get(self, request, pk=None):
+        # Se c'è un PK, restituiamo la singola task
+        if pk:
+            task = self.get_object(pk, request.user)
+            if not task:
+                return Response({"error": "Task non trovata"}, status=status.HTTP_404_NOT_FOUND)
+            serializer = TaskSerializer(task)
+            return Response(serializer.data)
+
         try:
             limit = int(request.query_params.get('limit', 10))
             offset = int(request.query_params.get('offset', 0))
@@ -144,7 +157,7 @@ class Tasks(APIView):
             is_active=True
         )
 
-        # Contiamo il totale prima di affettare la lista (utile per il frontend)
+        # Contiamo il totale prima di affettare la lista di Task
         total_count = queryset.count()
 
         # "Affettiamo" il queryset: [inizio : fine]
@@ -157,3 +170,29 @@ class Tasks(APIView):
             'total': total_count,
             'has_more': offset + limit < total_count
         })
+
+    # Aggiungi pk=None anche qui
+    def post(self, request, pk=None):
+        serializer = TaskSerializer(data=request.data)
+        if serializer.is_valid():
+            task = serializer.save(created_by=request.user)
+            return Response({
+                "message": "Task creata con successo",
+                "id": task.id
+            }, status=status.HTTP_201_CREATED)
+        return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+
+    # Aggiungi il metodo PUT per le modifiche future
+    def put(self, request, pk=None):
+        if not pk:
+            return Response({"error": "ID mancante"}, status=status.HTTP_400_BAD_REQUEST)
+
+        task = self.get_object(pk, request.user)
+        if not task:
+            return Response({"error": "Task non trovata"}, status=status.HTTP_404_NOT_FOUND)
+
+        serializer = TaskSerializer(task, data=request.data, partial=True)
+        if serializer.is_valid():
+            serializer.save()
+            return Response({"message": "Modifiche salvate!"})
+        return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)

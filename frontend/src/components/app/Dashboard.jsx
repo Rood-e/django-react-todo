@@ -102,7 +102,7 @@ function Dashboard() {
                     {tasks.length > 0 ? (
                         tasks.map((task) => (
                             /* La key va qui, sul componente più esterno del map */
-                            <Link to={`/task/edit/${task.id}`} key={task.id} className="block group">
+                            <Link to={`/app/task/${task.id}`} key={task.id} className="block group">
                                 <div className="p-5 bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-3xl flex items-center justify-between transition-all duration-300 shadow-sm hover:shadow-xl hover:shadow-blue-500/10 hover:-translate-y-1 border-b-4 hover:border-blue-500">
                                     <div className="flex items-center gap-4">
                                         <input

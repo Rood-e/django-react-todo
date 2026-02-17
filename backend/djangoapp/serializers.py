@@ -50,9 +50,22 @@ class TaskSerializer(serializers.ModelSerializer):
     class Meta:
         model = Task
         fields = [
-            'id', 'title', 'content', 'priority', 'status',
+            'id', 'title', 'content', 'priority', 'status', 'type',
             'is_active', 'due_date', 'created_by', 'created_by_name',
             'categories', 'created_at', 'updated_at'
         ]
         # Il campo created_by lo impostiamo noi nel backend, non l'utente dal form
         read_only_fields = ['created_by', 'created_at', 'updated_at']
+        extra_kwargs = {
+            'title': {
+                'error_messages': {
+                    'blank': 'Il titolo è necessario per salvare la nota.',
+                    'required': 'Non puoi creare una task senza un titolo.'
+                }
+            },
+            'content': {
+                'error_messages': {
+                    'blank': 'Il contenuto non può essere vuoto.'
+                }
+            }
+        }

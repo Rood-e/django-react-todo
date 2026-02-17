@@ -100,7 +100,7 @@ function TaskDetail() {
         );
     }
 
-    const type = isNew ? selectedType : task?.task_type;
+    const type = isNew ? selectedType : task?.type;
 
     return (
         /* Centratura anche per gli editor se sono brevi */

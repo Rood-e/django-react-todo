@@ -14,7 +14,10 @@ import Error404 from './components/Error404';
 import Error401 from "./components/Error401.jsx";
 import AppLayout from './components/app/AppLayout.jsx';
 import Dashboard from "./components/app/Dashboard.jsx";
-import TaskDetail from "./components/app/TaskDetail.jsx"; // Il nuovo componente ibrido
+import TaskDetail from "./components/app/TaskDetail.jsx";
+
+import {Toaster} from "react-hot-toast";
+import {CheckCircleIcon, XCircleIcon} from "@heroicons/react/24/outline";
 
 function App() {
     const [isDark, setIsDark] = useState(() => {
@@ -34,6 +37,44 @@ function App() {
 
     return (
         <div className={isDark ? 'dark' : ''}>
+            <Toaster position="top-right"
+                     toastOptions={{
+                             className: 'rounded-xl p-4 font-medium text-sm flex items-center gap-3 border cursor-pointer select-none',
+                             duration: 3000}}>
+                {(t) => (
+                    <div
+                        className={`${
+                            t.visible ? 'animate-enter' : 'animate-leave'
+                        } max-w-md bg-white dark:bg-slate-800 shadow-lg rounded-xl pointer-events-auto flex flex-col overflow-hidden border border-slate-200 dark:border-slate-700`}
+                        style={{
+                            // Logica per il colore in base al tipo
+                            borderLeft: t.type === 'success' ? '4px solid #10b981' : t.type === 'error' ? '4px solid #ef4444' : '4px solid #3b82f6'
+                        }}
+                    >
+                        <div className="p-4 flex items-center gap-3">
+                            {t.type === 'success' ? (
+                                <CheckCircleIcon className="w-6 h-6 text-green-500" />
+                            ) : (
+                                <XCircleIcon className="w-6 h-6 text-red-500" />
+                            )}
+                            <p className="text-sm font-medium text-slate-900 dark:text-white">
+                                {t.message}
+                            </p>
+                        </div>
+
+                        {/* Barra di progresso animata */}
+                        <div className="h-0.5 w-full bg-slate-100 dark:bg-slate-700">
+                            <div
+                                className={`h-full ${t.type === 'success' ? 'bg-green-500' : 'bg-red-500'}`}
+                                style={{
+                                    animation: `progress ${t.duration || 4000}ms linear forwards`
+                                }}
+                            />
+                        </div>
+                    </div>
+                )}
+            </Toaster>
+
             <Routes>
                 {/* Public Routes */}
                 <Route path="/" element={<Home isDark={isDark} setIsDark={setIsDark}/>} />

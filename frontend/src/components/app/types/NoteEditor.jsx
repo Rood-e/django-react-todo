@@ -1,45 +1,53 @@
-import { useState, useRef } from "react";
+import { useState, useEffect } from "react";
 import api from "../../../api.js";
 import { useNavigate } from "react-router-dom";
+
 import { useEditor, EditorContent } from '@tiptap/react';
 import StarterKit from '@tiptap/starter-kit';
-import Underline from '@tiptap/extension-underline';
 
 import {
     ArrowLeftIcon, ChevronDownIcon, CheckCircleIcon, ClockIcon,
     PlayIcon, StopIcon, ChevronUpIcon, BoldIcon, ItalicIcon,
     HashtagIcon, ListBulletIcon, CloudArrowDownIcon,
-    Bars3BottomLeftIcon, CodeBracketIcon
+    Bars3BottomLeftIcon
 } from "@heroicons/react/24/outline";
 
 function NoteEditor({ task, isNew }) {
+    console.log("Dati Task ricevuti:", task);
     const navigate = useNavigate();
-    const dropdownRef = useRef(null);
-    const [title, setTitle] = useState(task?.title || "");
-    const [status, setStatus] = useState(task?.status || "pending");
+    const [title, setTitle] = useState("");
+    const [status, setStatus] = useState("pending");
     const [isSaving, setIsSaving] = useState(false);
     const [showToolbar, setShowToolbar] = useState(true);
     const [isDropdownOpen, setIsDropdownOpen] = useState(false);
 
     const editor = useEditor({
-        // FIX: Rimosse estensioni duplicate e configurate correttamente
         extensions: [
             StarterKit.configure({
                 heading: { levels: [1, 2] },
                 bulletList: true,
                 orderedList: true,
-                codeBlock: false, // Lo disabilitiamo qui per configurarlo meglio sotto
             }),
-            Underline,
         ],
-        content: task?.content || "",
+        content: "",
         editorProps: {
             attributes: {
-                // prose-lg e p-10 servono per dare respiro al testo
                 class: 'outline-none prose prose-slate dark:prose-invert max-w-none text-xl min-h-[500px] leading-relaxed cursor-text p-10',
             },
         },
     });
+
+    // SINCRONIZZAZIONE DATI: Aggiorna l'editor e gli stati quando 'task' cambia
+    useEffect(() => {
+        if (task) {
+            setTitle(task.title || "");
+            setStatus(task.status || "pending");
+
+            if (editor && task.content !== editor.getHTML()) {
+                editor.commands.setContent(task.content || "");
+            }
+        }
+    }, [task, editor]);
 
     const STATUS_OPTIONS = [
         { value: 'tostart', label: 'Da Iniziare', icon: StopIcon, color: 'text-slate-400' },
@@ -48,23 +56,29 @@ function NoteEditor({ task, isNew }) {
         { value: 'completed', label: 'Completata', icon: CheckCircleIcon, color: 'text-green-500' }
     ];
 
-    const currentStatus = STATUS_OPTIONS.find(opt => opt.value === status);
+    const currentStatus = STATUS_OPTIONS.find(opt => opt.value === status) || STATUS_OPTIONS[2];
 
     const handleSave = async () => {
         if (!editor) return;
         setIsSaving(true);
         try {
-            const payload = { title: title || "Senza titolo", content: editor.getHTML(), status, task_type: 'note' };
-            isNew ? await api.post("tasks/", payload) : await api.put(`tasks/${task.id}/`, payload);
-            navigate("/app");
-        } catch (err) { console.error(err); } finally { setIsSaving(false); }
+            const payload = { title, content: editor.getHTML(), status, type: 'note' };
+
+            if (isNew) {
+                const res = await api.post("tasks/", payload);
+                navigate(`/app/task/${res.data.id}`, { replace: true });
+            } else {
+                await api.put(`tasks/${task.id}/`, payload);
+            }
+        } finally {
+            setIsSaving(false);
+        }
     };
 
     if (!editor) return null;
 
     return (
         <div className="flex flex-col h-screen bg-white dark:bg-slate-900 transition-colors duration-300">
-            {/* CSS NECESSARIO PER VISUALIZZARE LISTE E CODICE */}
             <style>{`
                 .ProseMirror ul { list-style-type: disc !important; padding-left: 1.5em !important; }
                 .ProseMirror ol { list-style-type: decimal !important; padding-left: 1.5em !important; }
@@ -98,7 +112,7 @@ function NoteEditor({ task, isNew }) {
                                 <ChevronDownIcon className={`w-3 h-3 text-slate-400 transition-transform ${isDropdownOpen ? 'rotate-180' : ''}`} />
                             </button>
                             {isDropdownOpen && (
-                                <div className="absolute top-full right-0 mt-2 w-56 bg-white dark:bg-slate-800 border border-slate-100 dark:border-slate-700 rounded-2xl shadow-2xl overflow-hidden p-1 z-[60]">
+                                <div className="absolute top-full right-0 mt-2 w-56 bg-white dark:bg-slate-800 border border-slate-100 dark:border-slate-700 rounded-2xl shadow-2xl overflow-hidden p-1 z-60">
                                     {STATUS_OPTIONS.map((opt) => (
                                         <button key={opt.value} onClick={() => { setStatus(opt.value); setIsDropdownOpen(false); }} className="flex items-center gap-3 w-full px-4 py-3 rounded-xl hover:bg-slate-50 dark:hover:bg-slate-700 transition-all text-left cursor-pointer">
                                             <opt.icon className={`w-4 h-4 ${opt.color}`} />
@@ -126,7 +140,6 @@ function NoteEditor({ task, isNew }) {
                             <div className="w-px h-6 bg-slate-200 dark:bg-slate-700 mx-2" />
                             <ToolButton icon={ListBulletIcon} label="Lista" onClick={() => editor.chain().focus().toggleBulletList().run()} active={editor.isActive('bulletList')} />
                             <ToolButton icon={Bars3BottomLeftIcon} label="Citazione" onClick={() => editor.chain().focus().toggleBlockquote().run()} active={editor.isActive('blockquote')} />
-                            <ToolButton icon={CodeBracketIcon} label="Codice" onClick={() => editor.chain().focus().toggleCodeBlock().run()} active={editor.isActive('codeBlock')} />
                         </div>
                         <button onClick={() => setShowToolbar(false)} className="p-2 text-slate-400 hover:text-red-500 cursor-pointer transition-colors"><ChevronUpIcon className="w-4 h-4" /></button>
                     </div>

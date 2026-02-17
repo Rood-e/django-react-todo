@@ -1,4 +1,4 @@
-from rest_framework.authtoken.views import obtain_auth_token
+# from rest_framework.authtoken.views import obtain_auth_token
 
 from . import views
 from django.urls import path
@@ -14,4 +14,5 @@ urlpatterns = [
     path('logout/',views.Logout.as_view(),name='logout'),
 
     path('tasks/',views.Tasks.as_view(),name='tasks'),
+    path('tasks/<int:pk>/', views.Tasks.as_view(), name='task-detail'),
 ]
