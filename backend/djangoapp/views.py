@@ -151,10 +151,11 @@ class Tasks(APIView):
             limit = 10
             offset = 0
 
-        # Query filtrata per utente
+        active_param = request.query_params.get('active', 'true').lower() == 'true'
+
         queryset = Task.objects.filter(
             created_by=request.user,
-            is_active=True
+            is_active=active_param
         )
 
         # Contiamo il totale prima di affettare la lista di Task
@@ -182,17 +183,53 @@ class Tasks(APIView):
             }, status=status.HTTP_201_CREATED)
         return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
 
-    # Aggiungi il metodo PUT per le modifiche future
     def put(self, request, pk=None):
         if not pk:
             return Response({"error": "ID mancante"}, status=status.HTTP_400_BAD_REQUEST)
 
-        task = self.get_object(pk, request.user)
-        if not task:
+        # Cerchiamo tra tutte le task dell'utente, anche quelle disattivate
+        try:
+            task = Task.objects.get(pk=pk, created_by=request.user)
+        except Task.DoesNotExist:
             return Response({"error": "Task non trovata"}, status=status.HTTP_404_NOT_FOUND)
 
+        # Azione di Ripristino (Restore)
+        if request.data.get('action') == 'restore':
+            task.is_active = True
+            task.save()
+            return Response({"message": "Task ripristinata"})
+
+        # Salvataggio normale
         serializer = TaskSerializer(task, data=request.data, partial=True)
         if serializer.is_valid():
             serializer.save()
             return Response({"message": "Modifiche salvate!"})
         return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+
+    def delete(self, request, pk=None):
+        # CASO 1: Svuotamento totale del cestino
+        if not pk and request.query_params.get('action') == 'empty_trash':
+            deleted_count, _ = Task.objects.filter(
+                created_by=request.user,
+                is_active=False
+            ).delete()
+
+            message = "Cestino svuotato: 1 elemento" if deleted_count == 1 else f'Cestino svuotato: {deleted_count} elementi'
+
+            return Response({"message": message})
+
+        # CASO 2: Eliminazione singola
+        if not pk:
+            return Response({"error": "ID mancante"}, status=status.HTTP_400_BAD_REQUEST)
+
+        try:
+            task = Task.objects.get(pk=pk, created_by=request.user)
+            if not task.is_active:
+                task.delete() # Hard delete se già nel cestino
+                return Response({"message": "Eliminata definitivamente"})
+
+            task.is_active = False # Soft delete
+            task.save()
+            return Response({"message": "Spostata nel cestino"})
+        except Task.DoesNotExist:
+            return Response(status=status.HTTP_404_NOT_FOUND)

@@ -101,6 +101,7 @@ function App() {
                 }>
                     {/* /app */}
                     <Route index element={<Dashboard />} />
+                    <Route path="trash" element={<Dashboard isTrashView={true} />} />
 
                     {/* /app/task/new o /app/task/123 */}
                     <Route path="task/:id" element={<TaskDetail />} />

@@ -4,20 +4,23 @@ import {
     CheckCircleIcon,
     ClockIcon,
     ListBulletIcon,
-    ChevronDownIcon
+    ChevronDownIcon,
+    TrashIcon,
+    ArrowPathIcon
 } from "@heroicons/react/24/outline";
-import {Link} from "react-router-dom";
+import { Link } from "react-router-dom";
 
-// Sotto-componente per le card delle statistiche (per non ripetere codice)
+// Sotto-componente per le card delle statistiche
 function StatCard({ title, value, icon: Icon, color }) {
     const colors = {
         blue: "text-blue-600 dark:text-blue-700 bg-blue-100 dark:bg-blue-200",
         green: "text-green-600 dark:text-green-700 bg-green-100 dark:bg-green-200",
         orange: "text-orange-600 dark:text-orange-700 bg-orange-100 dark:bg-orange-200",
+        red: "text-red-600 dark:text-red-700 bg-red-100 dark:bg-red-200",
     };
 
     return (
-        <div className="p-6 bg-slate-50 dark:bg-slate-800/50 border border-slate-100 dark:border-slate-800 rounded-[2.5rem] flex items-center gap-5">
+        <div className="p-6 bg-slate-50 dark:bg-slate-800/50 border border-slate-100 dark:border-slate-800 rounded-[2.5rem] flex items-center gap-5 transition-all">
             <div className={`p-4 rounded-2xl ${colors[color]}`}>
                 <Icon className="w-8 h-8" />
             </div>
@@ -29,74 +32,109 @@ function StatCard({ title, value, icon: Icon, color }) {
     );
 }
 
+function Dashboard({ isTrashView = false }) {
+    const [tasks, setTasks] = useState([]);
+    const [stats, setStats] = useState(null);
+    const [offset, setOffset] = useState(0);
+    const [hasMore, setHasMore] = useState(false);
+    const [showEmptyTrashModal, setShowEmptyTrashModal] = useState(false);
 
-function Dashboard() {
-    // 1. STATI: Dove salviamo i dati
-    const [tasks, setTasks] = useState([]);       // La lista dei task
-    const [stats, setStats] = useState(null);     // I numeri (totale, completati, ecc.)
-    const [offset, setOffset] = useState(0);      // Quanti task abbiamo già saltato
-    const [hasMore, setHasMore] = useState(false); // Ci sono altri task sul server?
-    const LIMIT = 10;                              // Quanti ne carichiamo per volta
+    const LIMIT = 10;
 
-    // 2. FUNZIONE PER CARICARE I DATI
+    useEffect(() => {
+        loadTasks(true);
+    }, [isTrashView]);
     const loadTasks = async (reset = false) => {
         try {
-            // Se reset è true (primo avvio), partiamo da zero, altrimenti usiamo l'offset attuale
             const currentOffset = reset ? 0 : offset;
-            const response = await api.get(`tasks/?limit=${LIMIT}&offset=${currentOffset}`);
+            // Aggiungiamo il filtro active basato sulla prop isTrashView
+            const response = await api.get(`tasks/?limit=${LIMIT}&offset=${currentOffset}&active=${!isTrashView}`);
 
             const newTasks = response.data.tasks;
             const total = response.data.total;
 
             if (reset) {
                 setTasks(newTasks);
-                setOffset(LIMIT); // Prepariamo l'offset per la prossima volta
+                setOffset(LIMIT);
             } else {
-                setTasks([...tasks, ...newTasks]); // Aggiungiamo i nuovi a quelli vecchi
+                setTasks(prev => [...prev, ...newTasks]);
                 setOffset(currentOffset + LIMIT);
             }
 
             setHasMore(response.data.has_more);
 
-            // Calcoliamo le statistiche basandoci sul totale che ci ha dato il server
+            // Statistiche dinamiche
             setStats({
                 total: total,
-                completed: newTasks.filter(t => t.status === 'completed').length, // Esempio semplice
+                completed: newTasks.filter(t => t.status === 'completed').length,
                 pending: total - newTasks.filter(t => t.status === 'completed').length
             });
 
         } catch (err) {
             console.error("Errore nel caricamento:", err);
         }
+
     };
 
-    // 3. AVVIO: Carica i primi 10 appena apri la pagina
-    useEffect(() => {
-        loadTasks(true);
-    }, []);
+    const handleEmptyTrash = async () => {
+        try {
+            await api.delete('tasks/?action=empty_trash')
+            setTasks([]);
+            setStats(prev => ({ ...prev, total: 0 }));
+        } catch (err) {
+            console.error("Errore svuotamento cestino", err);
+        } finally {
+            setShowEmptyTrashModal(false);
+        }
+    };
 
     return (
         <div className="space-y-10 animate-in fade-in duration-500">
-            {/* INTESTAZIONE */}
-            <header>
-                <h1 className="text-4xl font-black text-slate-900 dark:text-white uppercase">
-                    Bentornato, <span className='text-blue-600'>{localStorage.getItem('user')}</span>
-                </h1>
-                <p className="text-slate-500 font-medium">Gestione attività e statistiche.</p>
+            {/* INTESTAZIONE DINAMICA */}
+            <header className="flex justify-between items-end">
+                <div>
+                    <h1 className="text-4xl font-black text-slate-900 dark:text-white uppercase tracking-tighter">
+                        {isTrashView ? (
+                            <>Il tuo <span className="text-red-500">Cestino</span></>
+                        ) : (
+                            <>Bentornato, <span className="text-blue-600">{localStorage.getItem('user')}</span></>
+                        )}
+                    </h1>
+                    <p className="text-slate-500 font-medium">
+                        {isTrashView
+                            ? "Le note qui verranno conservate prima dell'eliminazione definitiva."
+                            : "Gestione attività e statistiche correnti."}
+                    </p>
+                </div>
             </header>
 
-            {/* GRIGLIA STATISTICHE (I 3 QUADRATI IN ALTO) */}
+            {/* GRIGLIA STATISTICHE */}
             <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-                <StatCard title="Totali" value={stats?.total || 0} icon={ListBulletIcon} color="blue" />
+                <StatCard
+                    title={isTrashView ? "Nel Cestino" : "Totali"}
+                    value={stats?.total || 0}
+                    icon={isTrashView ? TrashIcon : ListBulletIcon}
+                    color={isTrashView ? "red" : "blue"}
+                />
                 <StatCard title="Completati" value={stats?.completed || 0} icon={CheckCircleIcon} color="green" />
                 <StatCard title="In Sospeso" value={stats?.pending || 0} icon={ClockIcon} color="orange" />
             </div>
 
             {/* LISTA DEI TASK */}
-            <section className="space-y-4">
-                <h2 className="text-xl font-black text-slate-900 dark:text-white uppercase tracking-wide">
-                    Le tue Task
-                </h2>
+            <section className="space-y-6">
+                <header className="flex justify-between items-end">
+                    <h2 className="text-xl font-black text-slate-900 dark:text-white uppercase tracking-widest">
+                        {isTrashView ? "Task Eliminate" : "Le tue Task"}
+                    </h2>
+                    {isTrashView && tasks.length > 0 && (
+                        <button
+                            onClick={() => setShowEmptyTrashModal(true)}
+                            className="mb-1 px-6 py-3 bg-red-200 text-red-600 dark:bg-red-900/20 border border-red-100 dark:border-red-900/30 rounded-2xl text-[10px] font-black uppercase tracking-widest hover:bg-red-600 hover:text-white transition-all cursor-pointer shadow-sm active:scale-95"
+                        >
+                            Svuota Cestino
+                        </button>
+                    )}
+                </header>
 
                 <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
                     {tasks.length > 0 ? (
@@ -105,28 +143,38 @@ function Dashboard() {
                             <Link to={`/app/task/${task.id}`} key={task.id} className="block group">
                                 <div className="p-5 bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-3xl flex items-center justify-between transition-all duration-300 shadow-sm hover:shadow-xl hover:shadow-blue-500/10 hover:-translate-y-1 border-b-4 hover:border-blue-500">
                                     <div className="flex items-center gap-4">
-                                        <input
-                                            type="checkbox"
-                                            checked={task.status === 'completed'}
-                                            readOnly
-                                            className="w-6 h-6 rounded-full border-2 border-slate-300 checked:bg-blue-600 cursor-pointer transition-colors"
-                                        />
+                                        <div className={`p-2 rounded-xl ${isTrashView ? 'bg-red-50 dark:bg-red-900/20' : 'bg-blue-50 dark:bg-blue-900/20'}`}>
+                                            {isTrashView ? (
+                                                <TrashIcon className="w-5 h-5 text-red-500" />
+                                            ) : (
+                                                <ListBulletIcon className="w-5 h-5 text-blue-500" />
+                                            )}
+                                        </div>
                                         <div>
-                                            <h3 className="font-bold text-slate-900 dark:text-white group-hover:text-blue-600 transition-colors">
-                                                {task.title}
+                                            <h3 className={`font-bold text-slate-900 dark:text-white transition-colors ${isTrashView ? 'group-hover:text-red-500' : 'group-hover:text-blue-600'}`}>
+                                                {task.title || "Senza titolo"}
                                             </h3>
-                                            <p className="text-xs text-slate-400 font-medium">
-                                                Scadenza: {task.due_date || 'Nessuna'}
+                                            <p className="text-[10px] text-slate-400 font-black uppercase tracking-widest">
+                                                {isTrashView ? "Sola lettura" : `Modificato: ${new Date(task.updated_at).toLocaleDateString()}`}
                                             </p>
                                         </div>
                                     </div>
-                                    <span className={`text-[10px] font-black uppercase px-3 py-1 rounded-full ${
-                                        task.status === 'completed'
-                                            ? 'bg-green-100 text-green-600 dark:bg-green-900/30'
-                                            : 'bg-slate-100 text-slate-500 dark:bg-slate-700'
-                                    }`}>
-                                        {task.status}
-                                    </span>
+
+                                    {/* Badge di stato o di eliminazione */}
+                                    <div className="flex items-center gap-3">
+                                        {isTrashView && (
+                                            <span className="flex items-center gap-1 text-[9px] font-black uppercase px-3 py-1 bg-amber-100 text-amber-600 dark:bg-amber-900/30 rounded-full">
+                                                <ArrowPathIcon className="w-3 h-3" /> Cestinato
+                                            </span>
+                                        )}
+                                        <span className={`text-[10px] font-black uppercase px-3 py-1 rounded-full ${
+                                            task.status === 'completed'
+                                                ? 'bg-green-100 text-green-600 dark:bg-green-900/30'
+                                                : 'bg-slate-100 text-slate-500 dark:bg-slate-700'
+                                        }`}>
+                                            {task.status}
+                                        </span>
+                                    </div>
                                 </div>
                             </Link>
                         ))
@@ -152,6 +200,46 @@ function Dashboard() {
                     </div>
                 )}
             </section>
+
+            {/* Modale di conferma svuotamento cestino */}
+            {showEmptyTrashModal && (
+                <div className="fixed inset-0 z-200 flex items-center justify-center p-4 bg-slate-900/60 backdrop-blur-md animate-in fade-in duration-300">
+
+                    <div className="bg-white dark:bg-slate-900 w-full max-w-md rounded-[3rem] p-10 shadow-2xl border border-slate-100 dark:border-slate-800 animate-in zoom-in-95 duration-200">
+
+                        <div className="flex flex-col items-center text-center">
+                            {/* Icona Warning Dinamica */}
+                            <div className="w-20 h-20 bg-red-100 dark:bg-red-900/30 rounded-3xl flex items-center justify-center mb-8 animate-pulse">
+                                <TrashIcon className="w-10 h-10 text-red-600" />
+                            </div>
+
+                            <h3 className="text-2xl font-black uppercase tracking-tighter text-slate-900 dark:text-white mb-4">
+                                Svuotare il Cestino?
+                            </h3>
+
+                            <p className="text-slate-500 dark:text-slate-400 mb-10 leading-relaxed font-medium">
+                                Stai per eliminare definitivamente <span className="text-red-600 font-bold">tutte le note</span> presenti nel cestino. Questa azione non può essere annullata in alcun modo.
+                            </p>
+
+                            <div className="flex flex-col w-full gap-4">
+                                <button
+                                    onClick={handleEmptyTrash}
+                                    className="w-full py-5 bg-red-600 hover:bg-red-700 text-white rounded-2xl font-black text-xs uppercase tracking-[0.2em] transition-all shadow-xl shadow-red-600/20 active:scale-95 cursor-pointer"
+                                >
+                                    Sì, elimina tutto per sempre
+                                </button>
+
+                                <button
+                                    onClick={() => setShowEmptyTrashModal(false)}
+                                    className="w-full py-5 bg-slate-100 dark:bg-slate-800 text-slate-500 dark:text-slate-400 rounded-2xl font-black text-xs uppercase tracking-[0.2em] hover:bg-slate-200 dark:hover:bg-slate-700 transition-all cursor-pointer"
+                                >
+                                    Annulla
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            )}
         </div>
     );
 }

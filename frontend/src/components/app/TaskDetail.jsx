@@ -1,4 +1,4 @@
-import { useParams } from "react-router-dom";
+import {useNavigate, useParams} from "react-router-dom";
 import { useState, useEffect } from "react";
 import api from "../../api.js";
 
@@ -38,11 +38,13 @@ function TypeCard({ title, desc, icon: Icon, onClick }) {
 }
 
 function TaskDetail() {
+    const navigate = useNavigate();
     const { id } = useParams();
     const isNew = id === 'new';
 
     const [task, setTask] = useState(null);
     const [loading, setLoading] = useState(!isNew);
+    const [isSaving, setIsSaving] = useState(false);
     const [selectedType, setSelectedType] = useState(null);
 
     useEffect(() => {
@@ -61,6 +63,42 @@ function TaskDetail() {
         }
     }, [id, isNew]);
 
+    const onSave = async (payload) => {
+        try {
+            setIsSaving(true);
+            if (isNew) {
+                const res = await api.post("tasks/", { ...payload, type: selectedType });
+                navigate(`/app/task/${res.data.id}`, { replace: true });
+            } else {
+                await api.put(`tasks/${id}/`, payload);
+                setTask(prev => ({ ...prev, ...payload }));
+            }
+        } finally {
+            setIsSaving(false);
+        }
+    };
+
+    const onDelete = async () => {
+        setIsSaving(true);
+        try {
+            await api.delete(`tasks/${id}/`);
+            // Se eravamo già nel cestino o abbiamo appena eliminato, torniamo alla lista
+            navigate("/app", { replace: true });
+        } finally {
+            setIsSaving(false);
+        }
+    };
+
+    const onRestore = async () => {
+        setIsSaving(true);
+        try {
+            await api.put(`tasks/${id}/`, { action: 'restore' });
+            setTask(prev => ({ ...prev, is_active: true }));
+        } finally {
+            setIsSaving(false);
+        }
+    };
+
     if (loading) return (
         <div className="flex justify-center items-center h-[calc(100vh-200px)]">
             <div className="animate-spin rounded-full h-12 w-12 border-t-2 border-b-2 border-blue-500"></div>
@@ -69,7 +107,6 @@ function TaskDetail() {
 
     if (isNew && !selectedType) {
         return (
-            /* h-[calc(100vh-160px)] calcola l'altezza disponibile togliendo header/padding per centrare perfettamente */
             <div className="flex flex-col items-center justify-center min-h-[calc(100vh-160px)] animate-in fade-in zoom-in-95 duration-500">
                 <h2 className="text-sm font-black uppercase tracking-[0.2em] text-slate-400 mb-10">
                     Seleziona tipologia
@@ -105,8 +142,8 @@ function TaskDetail() {
     return (
         /* Centratura anche per gli editor se sono brevi */
         <div className={'-mt-4'}>
-            {type === 'note' && <NoteEditor task={task} isNew={isNew} />}
-            {type === 'list' && <ChecklistEditor task={task} isNew={isNew} />}
+            {type === 'note' && <NoteEditor task={task} isNew={isNew} onSave={onSave} onDelete={onDelete} isSaving={isSaving} onRestore={onRestore} />}
+            {type === 'list' && <ChecklistEditor task={task} isNew={isNew} onSave={onSave} onDelete={onDelete} isSaving={isSaving} />}
         </div>
     );
 }

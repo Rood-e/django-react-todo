@@ -1,126 +1,101 @@
 import {
-    Bars3Icon, CalendarDaysIcon, PlusIcon, ChevronDownIcon, Cog6ToothIcon, ChartBarSquareIcon,
-    ArrowLeftOnRectangleIcon
+    CalendarDaysIcon, PlusIcon, Cog6ToothIcon, ChartBarSquareIcon,
+    ArrowLeftOnRectangleIcon, TrashIcon
 } from '@heroicons/react/24/outline';
-import {Link, useNavigate} from "react-router-dom";
+import { Link, useNavigate, useLocation } from "react-router-dom";
+import { useState, useEffect } from "react";
 import api from "../../api.js";
 
-function Sidebar({isOpen,setIsOpen}) {
-    const navigate = useNavigate();
+function Sidebar({ isOpen, setIsOpen }) {
+    const location = useLocation();
+    const [counts, setCounts] = useState({ active: 0, trash: 0 });
 
-    const handleLogout = async () => {
-        try {
-            await api.post('logout/');
-        } catch (err) {
-            console.error("Errore durante il logout lato server:", err);
+    useEffect(() => {
+        const fetchCounts = async () => {
+            try {
+                const [activeRes, trashRes] = await Promise.all([
+                    api.get('tasks/?active=true&limit=1'),
+                    api.get('tasks/?active=false&limit=1')
+                ]);
+                setCounts({ active: activeRes.data.total || 0, trash: trashRes.data.total || 0 });
+            } catch (err) { console.error(err); }
+        };
+        fetchCounts();
+    }, [location.pathname]);
 
-        } finally { // Anche se il server fallisce, procediamo a pulire il locale per sicurezza
-            localStorage.removeItem('token');
-            localStorage.removeItem('user');
-
-            // Ritorno alla home
-            navigate('/');
-        }
-    };
+    const navItems = [
+        { to: "/app", icon: ChartBarSquareIcon, label: "Dashboard", count: counts.active, color: "text-blue-600", bg: "bg-blue-600" },
+        { to: "/app/calendar", icon: CalendarDaysIcon, label: "Calendario", count: null, color: "text-indigo-600", bg: "bg-indigo-600" },
+        { to: "/app/trash", icon: TrashIcon, label: "Cestino", count: counts.trash, color: "text-red-500", bg: "bg-red-500" },
+    ];
 
     return (
-        <div className={`min-h-screen border-r border-slate-200 dark:border-slate-800 flex flex-col p-4 justify-between transition-all duration-500 ease-in-out ${isOpen ? 'w-64' : 'w-20'}`}>
-            <div className="overflow-hidden">
-                {/* Hamburger */}
-                <div className="mb-8 flex items-center h-12">
-                    <div className={`flex items-center justify-center transition-all duration-500 ${isOpen ? 'w-12' : 'w-full'}`}>
-                        <div className="cursor-pointer p-1.5 hover:bg-slate-200 dark:hover:bg-slate-800 rounded-lg transition-colors"
-                             onClick={() => setIsOpen(!isOpen)}>
-                            <Bars3Icon className="h-8 w-8 text-slate-900 dark:text-white" />
-                        </div>
+        <div
+            onMouseEnter={() => setIsOpen(true)}
+            onMouseLeave={() => setIsOpen(false)}
+            className={`h-screen sticky top-0 flex flex-col border-r border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 transition-all duration-500 ease-in-out ${isOpen ? 'w-72' : 'w-24'}`}
+        >
+            {/* LOGO SECTION */}
+            <div className="flex flex-col items-center py-8 flex-none h-32">
+                <div className={`transition-all duration-500 ${!isOpen ? 'scale-100 opacity-100' : 'scale-0 opacity-0 h-0'}`}>
+                    <div className="h-12 w-12 bg-blue-600 rounded-2xl flex items-center justify-center shadow-lg shadow-blue-500/30">
+                        <span className="text-white text-2xl font-black">T</span>
                     </div>
                 </div>
-
-                {/* Bottone Nuovo + */}
-                <div className="mb-8 relative h-12 flex items-center">
-                    <div className={`absolute inset-0 flex items-center transition-all duration-500 ${isOpen ? 'opacity-100 scale-100' : 'opacity-0 scale-50 pointer-events-none'}`}>
-                        <button className="flex-1 h-full bg-white dark:bg-slate-900 border-2 border-slate-900 dark:border-white rounded-l-xl py-2 px-4 font-bold flex items-center justify-between whitespace-nowrap hover:bg-slate-200 dark:hover:bg-slate-800 transition-colors">
-                            Nuovo +
-                        </button>
-                        <button className="h-full bg-white dark:bg-slate-900 border-2 border-l-0 border-slate-900 dark:border-white rounded-r-xl py-2 px-3 flex items-center justify-center hover:bg-slate-200 dark:hover:bg-slate-800 transition-colors">
-                            <ChevronDownIcon className="w-5 h-5 text-slate-900 dark:text-white stroke-[2.5]" />
-                        </button>
-                    </div>
-                    <div className={`absolute inset-0 flex items-center justify-center transition-all duration-500 ${!isOpen ? 'opacity-100 scale-100' : 'opacity-0 scale-75 pointer-events-none'}`}>
-                        <button className="h-12 w-12 flex items-center justify-center bg-slate-900 dark:bg-white text-white dark:text-slate-900 rounded-xl shadow-lg hover:bg-slate-800 dark:hover:bg-slate-200 active:scale-95 transition-all">
-                            <PlusIcon className="w-6 h-6 stroke-3" />
-                        </button>
-                    </div>
-                </div>
-
-                {/* Sezione Navigazione */}
-                <div className="space-y-2">
-                    {/* Dashboard (Statistiche + Task) */}
-                    <Link to="/app" className="flex items-center h-12 text-slate-600 dark:text-slate-400 cursor-pointer group hover:bg-blue-50 dark:hover:bg-blue-900/20 rounded-2xl transition-all">
-                        <div className={`flex items-center justify-center transition-all duration-500 ${isOpen ? 'w-12' : 'w-full'}`}>
-                            <ChartBarSquareIcon className="w-7 h-7 min-w-7 group-hover:text-blue-600 transition-colors" />
-                        </div>
-                        <span className={`font-bold transition-all duration-500 whitespace-nowrap overflow-hidden ${isOpen ? 'max-w-xs opacity-100 ml-2' : 'max-w-0 opacity-0'}`}>
-                            Dashboard
-                        </span>
+                <div className={`overflow-hidden transition-all duration-500 ${isOpen ? 'max-w-xs opacity-100 px-8 w-full' : 'max-w-0 opacity-0 h-0'}`}>
+                    <Link to='/'>
+                        <span className="text-2xl font-black tracking-tighter dark:text-white uppercase block text-center">Task<span className='text-blue-600'>Master</span></span>
                     </Link>
-
-                    {/* Calendario */}
-                    <Link to="/app/calendar" className="flex items-center h-12 text-slate-600 dark:text-slate-400 cursor-pointer group hover:bg-blue-50 dark:hover:bg-blue-900/20 rounded-2xl transition-all">
-                        <div className={`flex items-center justify-center transition-all duration-500 ${isOpen ? 'w-12' : 'w-full'}`}>
-                            <CalendarDaysIcon className="w-7 h-7 min-w-7 group-hover:text-blue-600 transition-colors" />
-                        </div>
-                        <span className={`font-bold transition-all duration-500 whitespace-nowrap overflow-hidden ${isOpen ? 'max-w-xs opacity-100 ml-2' : 'max-w-0 opacity-0'}`}>
-                            Calendario
-                        </span>
-                    </Link>
-                </div>
-
-                {/* Liste decorative */}
-                <div className={`space-y-4 border-t border-slate-200 dark:border-slate-800 mt-6 pt-6 transition-all duration-500 ${isOpen ? 'opacity-100 translate-x-0' : 'opacity-0 -translate-x-10'}`}>
-                    <div className="h-2 w-32 bg-slate-200 dark:bg-slate-800 rounded-full ml-4"></div>
-                    <div className="h-2 w-24 bg-slate-200 dark:bg-slate-800 rounded-full ml-4"></div>
                 </div>
             </div>
 
-            <div className={'flex flex-col gap-1'}>
-                <div
-                    onClick={handleLogout}
-                    className="flex items-center h-12 text-red-500 cursor-pointer group hover:bg-red-50 dark:hover:bg-red-900/20 rounded-2xl transition-all">
-                    <div className={`flex items-center justify-center transition-all duration-500 ${isOpen ? 'w-12' : 'w-full'}`}>
-                        <div className="p-2 rounded-xl transition-all">
-                            <ArrowLeftOnRectangleIcon className="w-7 h-7 min-w-7 group-hover:scale-110 transition-transform" />
-                        </div>
-                    </div>
-                    <span className={`font-bold transition-all duration-500 whitespace-nowrap overflow-hidden ${isOpen ? 'max-w-xs opacity-100 ml-2' : 'max-w-0 opacity-0'}`}>
-                    Esci
-                </span>
-                </div>
-                <Link to={'/app/account'}>
-                    <div className="flex items-center h-12 text-slate-500 dark:text-slate-400 cursor-pointer group hover:bg-slate-200 dark:hover:bg-slate-800 rounded-2xl ">
-                        <div className={`flex items-center justify-center transition-all duration-500 ${isOpen ? 'w-12' : 'w-full'}`}>
-                            <div className="p-2 rounded-xl transition-all">
-                                <Cog6ToothIcon className="w-7 h-7 min-w-7 group-hover:rotate-90 transition-transform duration-500" />
-                            </div>
-                        </div>
-                        <span className={`font-medium transition-all duration-500 whitespace-nowrap overflow-hidden group-hover:text-slate-900 dark:group-hover:text-white ${isOpen ? 'max-w-xs opacity-100 ml-2' : 'max-w-0 opacity-0'}`}>
-                            Impostazioni
-                        </span>
-                    </div>
+            {/* NAVIGATION SECTION */}
+            <div className="grow flex flex-col px-4">
+                <Link to="/app/task/new" className={`flex items-center mb-10 bg-slate-900 dark:bg-white text-white dark:text-slate-900 rounded-2xl transition-all duration-300 shadow-xl hover:shadow-2xl active:scale-95 ${isOpen ? 'p-4 gap-4' : 'h-14 w-14 justify-center mx-auto'}`}>
+                    <PlusIcon className="w-6 h-6 stroke-3" />
+                    {isOpen && <span className="font-black text-xs uppercase tracking-[0.2em] whitespace-nowrap">Nuova Nota</span>}
                 </Link>
-                {/* Brand */}
-                <div className="h-12 flex items-center overflow-hidden border-t border-slate-200 dark:border-slate-800">
-                    <Link to={'/'} className="flex items-center w-full group hover:scale-105 transition-transform duration-300 origin-left">
-                        <div className={`flex items-center justify-center transition-all duration-500 ${isOpen ? 'w-12' : 'w-full'}`}>
-                            <span className="text-blue-600 text-3xl font-black">T</span>
-                        </div>
-                        <div className={`transition-all duration-500 whitespace-nowrap overflow-hidden -ml-3.5 mt-1 ${isOpen ? 'max-w-xs opacity-100' : 'max-w-0 opacity-0'}`}>
-                            <span className="text-slate-900 dark:text-white font-black text-2xl">askMaster</span>
-                        </div>
-                    </Link>
-                </div>
+
+                <nav className="space-y-3">
+                    {navItems.map((item) => {
+                        const isActive = location.pathname === item.to;
+                        return (
+                            <Link key={item.to} to={item.to} className={`flex items-center h-14 rounded-2xl transition-all group relative ${isActive ? 'bg-slate-50 dark:bg-slate-800/50' : 'hover:bg-slate-50 dark:hover:bg-slate-800/20'}`}>
+                                <div className={`flex items-center justify-center transition-all duration-500 ${isOpen ? 'w-16' : 'w-full'}`}>
+                                    <item.icon className={`w-6 h-6 transition-colors ${isActive ? item.color : 'text-slate-400 group-hover:' + item.color}`} />
+                                </div>
+                                {isOpen && (
+                                    <div className="flex items-center justify-between flex-1 pr-4 animate-in fade-in duration-500">
+                                        <span className={`font-black text-[10px] uppercase tracking-widest ${isActive ? 'text-slate-900 dark:text-white' : 'text-slate-400 group-hover:' + item.color}`}>
+                                            {item.label}
+                                        </span>
+                                        {item.count > 0 && <span className={`text-[9px] font-black px-2 py-0.5 rounded-lg text-white ${item.bg}`}>{item.count}</span>}
+                                    </div>
+                                )}
+                                {isActive && <div className={`absolute left-0 w-1.5 h-6 rounded-r-full ${item.bg}`} />}
+                            </Link>
+                        );
+                    })}
+                </nav>
+            </div>
+
+            {/* FOOTER SECTION */}
+            <div className="p-4 space-y-2 border-t border-slate-100 dark:border-slate-800 flex-none">
+                <Link to="/app/account" className="flex items-center h-12 text-slate-400 hover:text-slate-900 dark:hover:text-white group transition-all rounded-xl">
+                    <div className={`flex items-center justify-center transition-all duration-500 ${isOpen ? 'w-16' : 'w-full'}`}>
+                        <Cog6ToothIcon className="w-6 h-6 group-hover:rotate-45 transition-transform" />
+                    </div>
+                    {isOpen && <span className="text-[10px] font-black uppercase tracking-widest">Impostazioni</span>}
+                </Link>
+                <button onClick={() => {}} className="flex items-center h-12 text-red-400 hover:text-red-600 group transition-all cursor-pointer w-full rounded-xl">
+                    <div className={`flex items-center justify-center transition-all duration-500 ${isOpen ? 'w-16' : 'w-full'}`}>
+                        <ArrowLeftOnRectangleIcon className="w-6 h-6 group-hover:-translate-x-1 transition-transform" />
+                    </div>
+                    {isOpen && <span className="text-[10px] font-black uppercase tracking-widest">Disconnetti</span>}
+                </button>
             </div>
         </div>
     );
 }
+
 export default Sidebar;

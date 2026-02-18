@@ -13,12 +13,11 @@ function AppLayout({isDark, setIsDark}) {
             </div>
 
             <div className="w-full h-dvh flex flex-row">
-                <aside className="h-dvh">
+
                     <Sidebar isOpen={isOpen} setIsOpen={setIsOpen}/>
-                </aside>
 
                 {/* Sezione a destra: In base all'URL capisce cosa inserire */}
-                <main className="w-full bg-white dark:bg-slate-900 p-10 shadow-sm overflow-hidden">
+                <main className="flex-1  w-full bg-white dark:bg-slate-900 p-10 shadow-sm overflow-hidden">
                     <Outlet />
                 </main>
             </div>
