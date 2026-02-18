@@ -1,7 +1,5 @@
 import { useState, useEffect } from "react";
-import api from "../../../api.js";
 import { useNavigate } from "react-router-dom";
-
 import { useEditor, EditorContent } from '@tiptap/react';
 import StarterKit from '@tiptap/starter-kit';
 
@@ -12,16 +10,19 @@ import {
     Bars3BottomLeftIcon
 } from "@heroicons/react/24/outline";
 
-function NoteEditor({ task, isNew }) {
-    console.log("Dati Task ricevuti:", task);
+function NoteEditor({ task, isNew, onSave, onDelete, onRestore, isSaving }) {
     const navigate = useNavigate();
     const [title, setTitle] = useState("");
     const [status, setStatus] = useState("pending");
-    const [isSaving, setIsSaving] = useState(false);
     const [showToolbar, setShowToolbar] = useState(true);
     const [isDropdownOpen, setIsDropdownOpen] = useState(false);
+    const [showDeleteModal, setShowDeleteModal] = useState(false);
+
+    // Correzione riferimento is_active (backend usa snake_case)
+    const isArchived = task?.is_active === false;
 
     const editor = useEditor({
+        editable: !isArchived, // Disabilita editing se archiviata
         extensions: [
             StarterKit.configure({
                 heading: { levels: [1, 2] },
@@ -37,12 +38,10 @@ function NoteEditor({ task, isNew }) {
         },
     });
 
-    // SINCRONIZZAZIONE DATI: Aggiorna l'editor e gli stati quando 'task' cambia
     useEffect(() => {
         if (task) {
             setTitle(task.title || "");
             setStatus(task.status || "pending");
-
             if (editor && task.content !== editor.getHTML()) {
                 editor.commands.setContent(task.content || "");
             }
@@ -56,23 +55,16 @@ function NoteEditor({ task, isNew }) {
         { value: 'completed', label: 'Completata', icon: CheckCircleIcon, color: 'text-green-500' }
     ];
 
-    const currentStatus = STATUS_OPTIONS.find(opt => opt.value === status) || STATUS_OPTIONS[2];
+    const currentStatus = STATUS_OPTIONS.find(opt => opt.value === status) || STATUS_OPTIONS[0];
 
-    const handleSave = async () => {
-        if (!editor) return;
-        setIsSaving(true);
-        try {
-            const payload = { title, content: editor.getHTML(), status, type: 'note' };
+    const handleInternalSave = async () => {
+        if (!editor || isArchived) return;
+        await onSave({ title, content: editor.getHTML(), status });
+    };
 
-            if (isNew) {
-                const res = await api.post("tasks/", payload);
-                navigate(`/app/task/${res.data.id}`, { replace: true });
-            } else {
-                await api.put(`tasks/${task.id}/`, payload);
-            }
-        } finally {
-            setIsSaving(false);
-        }
+    const handleInternalDelete = async () => {
+        setShowDeleteModal(false);
+        await onDelete();
     };
 
     if (!editor) return null;
@@ -89,22 +81,45 @@ function NoteEditor({ task, isNew }) {
                 .dark .ProseMirror pre { background: #0f172a !important; border: 1px solid #1e293b !important; }
             `}</style>
 
-            <header className="flex-none bg-white dark:bg-slate-900 border-b border-slate-100 dark:border-slate-800 z-50">
+            {/* BANNER CESTINO */}
+            {isArchived && (
+                <div className="flex-none bg-amber-100 dark:bg-amber-500/20 border-b border-amber-100 dark:border-amber-900/30 p-4 flex justify-center items-center gap-8 animate-in slide-in-from-top duration-500">
+                    <div className="flex items-center gap-3">
+                        <TrashIcon className="w-5 h-5 text-amber-600" />
+                        <span className="text-[10px] font-black uppercase tracking-[0.2em] text-amber-700 dark:text-amber-400">Nota nel Cestino</span>
+                    </div>
+                    <div className="flex gap-3">
+                        <button onClick={onRestore} className="px-6 py-2 bg-amber-500 hover:bg-amber-600 text-white rounded-xl text-[10px] font-black uppercase tracking-widest transition-all cursor-pointer">
+                            Ripristina
+                        </button>
+                        <button onClick={() => setShowDeleteModal(true)} className="px-6 py-2 bg-red-500 hover:bg-red-600 text-white rounded-xl text-[10px] font-black uppercase tracking-widest transition-all cursor-pointer">
+                            Elimina Definitivamente
+                        </button>
+                    </div>
+                </div>
+            )}
+
+            <header className={`flex-none bg-white dark:bg-slate-900 border-b border-slate-100 dark:border-slate-800 z-50 transition-opacity ${isArchived ? 'opacity-50' : ''}`}>
                 <div className="flex items-center justify-between px-10 py-6">
                     <div className="flex items-center gap-8 flex-1">
-                        <button onClick={() => navigate(-1)} className="p-3 hover:bg-slate-100 dark:hover:bg-slate-800 rounded-2xl text-slate-400 cursor-pointer transition-colors">
+                        <button onClick={() => navigate(-1)} className="p-3 hover:bg-slate-100 dark:hover:bg-slate-800 rounded-2xl text-slate-400 cursor-pointer">
                             <ArrowLeftIcon className="w-6 h-6" />
                         </button>
                         <input
                             type="text" value={title} onChange={(e) => setTitle(e.target.value)}
+                            disabled={isArchived}
                             placeholder="Titolo Documento..."
-                            className="bg-transparent text-3xl font-black outline-none text-slate-900 dark:text-white w-full tracking-tighter"
+                            className="bg-transparent text-3xl font-black outline-none text-slate-900 dark:text-white w-full tracking-tighter disabled:cursor-not-allowed"
                         />
                     </div>
 
                     <div className="flex items-center gap-6">
                         <div className="relative">
-                            <button onClick={() => setIsDropdownOpen(!isDropdownOpen)} className="flex items-center justify-between w-52 px-4 py-3 bg-slate-50 dark:bg-slate-800 rounded-xl border border-slate-100 dark:border-slate-700 cursor-pointer">
+                            <button
+                                disabled={isArchived}
+                                onClick={() => setIsDropdownOpen(!isDropdownOpen)}
+                                className="flex items-center justify-between w-52 px-4 py-3 bg-slate-50 dark:bg-slate-800 rounded-xl border border-slate-100 dark:border-slate-700 cursor-pointer disabled:cursor-not-allowed"
+                            >
                                 <div className="flex items-center gap-3 text-[10px] font-black uppercase tracking-widest dark:text-white">
                                     <currentStatus.icon className={`w-4 h-4 ${currentStatus.color}`} />
                                     {currentStatus.label}
@@ -114,7 +129,7 @@ function NoteEditor({ task, isNew }) {
                             {isDropdownOpen && (
                                 <div className="absolute top-full right-0 mt-2 w-56 bg-white dark:bg-slate-800 border border-slate-100 dark:border-slate-700 rounded-2xl shadow-2xl overflow-hidden p-1 z-60">
                                     {STATUS_OPTIONS.map((opt) => (
-                                        <button key={opt.value} onClick={() => { setStatus(opt.value); setIsDropdownOpen(false); }} className="flex items-center gap-3 w-full px-4 py-3 rounded-xl hover:bg-slate-50 dark:hover:bg-slate-700 transition-all text-left cursor-pointer">
+                                        <button key={opt.value} onClick={() => { setStatus(opt.value); setIsDropdownOpen(false); }} className="flex items-center gap-3 w-full px-4 py-3 rounded-xl hover:bg-slate-50 dark:hover:bg-slate-700 text-left cursor-pointer">
                                             <opt.icon className={`w-4 h-4 ${opt.color}`} />
                                             <span className="text-[10px] font-black uppercase tracking-widest dark:text-slate-300">{opt.label}</span>
                                         </button>
@@ -122,13 +137,22 @@ function NoteEditor({ task, isNew }) {
                                 </div>
                             )}
                         </div>
-                        <button onClick={handleSave} className="flex items-center gap-3 px-10 py-4 bg-slate-900 dark:bg-white text-white dark:text-slate-900 rounded-2xl font-black text-xs uppercase tracking-widest shadow-xl transition-all hover:scale-105 active:scale-95 cursor-pointer">
-                            {isSaving ? "..." : <><CloudArrowDownIcon className="w-5 h-5"/> Salva</>}
-                        </button>
+
+                        {!isNew && !isArchived && (
+                            <button onClick={() => setShowDeleteModal(true)} className="p-3 text-slate-400 hover:text-red-500 hover:bg-red-50 dark:hover:bg-red-950/30 rounded-xl transition-all cursor-pointer">
+                                <TrashIcon className="w-6 h-6" />
+                            </button>
+                        )}
+
+                        {!isArchived && (
+                            <button onClick={handleInternalSave} className="flex items-center gap-3 px-10 py-4 bg-slate-900 dark:bg-white text-white dark:text-slate-900 rounded-2xl font-black text-xs uppercase tracking-widest shadow-xl transition-all hover:scale-105 active:scale-95 cursor-pointer">
+                                {isSaving ? "..." : <><CloudArrowDownIcon className="w-5 h-5"/> Salva</>}
+                            </button>
+                        )}
                     </div>
                 </div>
 
-                <div className={`overflow-hidden transition-all duration-500 ease-in-out ${showToolbar ? 'max-h-40 opacity-100' : 'max-h-0 opacity-0'}`}>
+                {showToolbar && !isArchived && (
                     <div className="flex items-center justify-between px-10 py-3 bg-slate-50/50 dark:bg-slate-800/20 border-t border-slate-100 dark:border-slate-800">
                         <div className="flex items-center gap-2">
                             <ToolButton icon={BoldIcon} label="B" onClick={() => editor.chain().focus().toggleBold().run()} active={editor.isActive('bold')} />
@@ -141,24 +165,45 @@ function NoteEditor({ task, isNew }) {
                             <ToolButton icon={ListBulletIcon} label="Lista" onClick={() => editor.chain().focus().toggleBulletList().run()} active={editor.isActive('bulletList')} />
                             <ToolButton icon={Bars3BottomLeftIcon} label="Citazione" onClick={() => editor.chain().focus().toggleBlockquote().run()} active={editor.isActive('blockquote')} />
                         </div>
-                        <button onClick={() => setShowToolbar(false)} className="p-2 text-slate-400 hover:text-red-500 cursor-pointer transition-colors"><ChevronUpIcon className="w-4 h-4" /></button>
-                    </div>
-                </div>
-
-                {!showToolbar && (
-                    <div className="flex justify-center">
-                        <button onClick={() => setShowToolbar(true)} className="px-10 py-1 bg-slate-100 dark:bg-slate-800 rounded-b-xl text-[8px] font-black text-slate-400 hover:text-blue-500 uppercase tracking-[0.3em] cursor-pointer transition-all border-x border-b border-slate-200 dark:border-slate-700 hover:py-2">
-                            Apri Menù Strumenti
-                        </button>
+                        <button onClick={() => setShowToolbar(false)} className="p-2 text-slate-400 hover:text-red-500 cursor-pointer"><ChevronUpIcon className="w-4 h-4" /></button>
                     </div>
                 )}
             </header>
 
-            <main className="flex-1 overflow-y-auto bg-white dark:bg-slate-900 custom-scrollbar">
+            <main className={`flex-1 overflow-y-auto bg-white dark:bg-slate-900 custom-scrollbar ${isArchived ? 'pointer-events-none select-none' : ''}`}>
                 <div className="max-w-5xl mx-auto">
                     <EditorContent editor={editor} />
                 </div>
             </main>
+
+            {/* MODALE CONFERMA ELIMINAZIONE */}
+            {showDeleteModal && (
+                <div className="fixed inset-0 z-100 flex items-center justify-center p-4 bg-slate-900/40 backdrop-blur-sm animate-in fade-in duration-200">
+                    <div className="bg-white dark:bg-slate-900 w-full max-w-sm rounded-[2.5rem] p-8 shadow-2xl border border-slate-100 dark:border-slate-800 animate-in zoom-in-95 duration-200">
+                        <div className="flex flex-col items-center text-center">
+                            <div className="w-16 h-16 bg-red-50 dark:bg-red-900/20 rounded-2xl flex items-center justify-center mb-6">
+                                <TrashIcon className="w-8 h-8 text-red-500" />
+                            </div>
+                            <h3 className="text-xl font-black uppercase tracking-tight text-slate-900 dark:text-white mb-2">
+                                {isArchived ? "Elimina Definitivamente" : "Sposta nel Cestino"}
+                            </h3>
+                            <p className="text-sm text-slate-500 dark:text-slate-400 mb-8 leading-relaxed">
+                                {isArchived
+                                    ? "Questa azione è irreversibile. La nota verrà rimossa permanentemente."
+                                    : "La nota non sarà più visibile nella dashboard principale, ma potrai ripristinarla dal cestino."}
+                            </p>
+                            <div className="flex flex-col w-full gap-3">
+                                <button onClick={handleInternalDelete} className="w-full py-4 bg-red-500 hover:bg-red-600 text-white rounded-2xl font-black text-xs uppercase tracking-[0.2em] transition-all shadow-lg active:scale-95 cursor-pointer">
+                                    Conferma
+                                </button>
+                                <button onClick={() => setShowDeleteModal(false)} className="w-full py-4 bg-slate-100 dark:bg-slate-800 text-slate-500 dark:text-slate-400 rounded-2xl font-black text-xs uppercase tracking-[0.2em] hover:bg-slate-200 transition-all cursor-pointer">
+                                    Annulla
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            )}
         </div>
     );
 }
