@@ -4,7 +4,7 @@ import Sidebar from "./Sidebar.jsx";
 import {useState} from "react";
 
 function AppLayout({isDark, setIsDark}) {
-    const [isOpen, setIsOpen] = useState(true);
+    const [isOpen, setIsOpen] = useState(false);
 
     return (
         <div className="min-h-screen bg-slate-50 dark:bg-slate-950 ">

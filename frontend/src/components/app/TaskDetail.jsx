@@ -143,7 +143,7 @@ function TaskDetail() {
         /* Centratura anche per gli editor se sono brevi */
         <div className={'-mt-4'}>
             {type === 'note' && <NoteEditor task={task} isNew={isNew} onSave={onSave} onDelete={onDelete} isSaving={isSaving} onRestore={onRestore} />}
-            {type === 'list' && <ChecklistEditor task={task} isNew={isNew} onSave={onSave} onDelete={onDelete} isSaving={isSaving} />}
+            {type === 'list' && <ChecklistEditor task={task} isNew={isNew} onSave={onSave} onDelete={onDelete} isSaving={isSaving} onRestore={onRestore} />}
         </div>
     );
 }

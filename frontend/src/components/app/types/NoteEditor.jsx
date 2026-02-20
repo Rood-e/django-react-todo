@@ -1,4 +1,4 @@
-import { useState, useEffect } from "react";
+import {useState, useEffect, useRef} from "react";
 import { useNavigate } from "react-router-dom";
 import { useEditor, EditorContent } from '@tiptap/react';
 import StarterKit from '@tiptap/starter-kit';
@@ -7,18 +7,21 @@ import {
     ArrowLeftIcon, ChevronDownIcon, CheckCircleIcon, ClockIcon,
     PlayIcon, StopIcon, ChevronUpIcon, BoldIcon, ItalicIcon,
     HashtagIcon, ListBulletIcon, CloudArrowDownIcon,
-    Bars3BottomLeftIcon
+    Bars3BottomLeftIcon, TrashIcon, CalendarIcon
 } from "@heroicons/react/24/outline";
 
 function NoteEditor({ task, isNew, onSave, onDelete, onRestore, isSaving }) {
     const navigate = useNavigate();
+    const statusMenuRef = useRef(null);
+    const dateMenuRef = useRef(null);
+
     const [title, setTitle] = useState("");
+    const [dueDate, setDueDate] = useState('');
     const [status, setStatus] = useState("pending");
     const [showToolbar, setShowToolbar] = useState(true);
-    const [isDropdownOpen, setIsDropdownOpen] = useState(false);
+    const [isStatusOpen, setIsStatusOpen] = useState(false);
     const [showDeleteModal, setShowDeleteModal] = useState(false);
 
-    // Correzione riferimento is_active (backend usa snake_case)
     const isArchived = task?.is_active === false;
 
     const editor = useEditor({
@@ -39,6 +42,15 @@ function NoteEditor({ task, isNew, onSave, onDelete, onRestore, isSaving }) {
     });
 
     useEffect(() => {
+        function handleClickOutside(event) {
+            if (statusMenuRef.current && !statusMenuRef.current.contains(event.target)) setIsStatusOpen(false);
+            if (dateMenuRef.current && !dateMenuRef.current.contains(event.target)) setIsDateOpen(false);
+        }
+        document.addEventListener("mousedown", handleClickOutside);
+        return () => document.removeEventListener("mousedown", handleClickOutside);
+    }, []);
+
+    useEffect(() => {
         if (task) {
             setTitle(task.title || "");
             setStatus(task.status || "pending");
@@ -49,17 +61,17 @@ function NoteEditor({ task, isNew, onSave, onDelete, onRestore, isSaving }) {
     }, [task, editor]);
 
     const STATUS_OPTIONS = [
-        { value: 'tostart', label: 'Da Iniziare', icon: StopIcon, color: 'text-slate-400' },
-        { value: 'progress', label: 'In Corso', icon: PlayIcon, color: 'text-blue-500' },
-        { value: 'pending', label: 'In Sospeso', icon: ClockIcon, color: 'text-amber-500' },
-        { value: 'completed', label: 'Completata', icon: CheckCircleIcon, color: 'text-green-500' }
+        { value: 'tostart', label: 'Da Iniziare', icon: StopIcon, color: 'text-slate-400', desc: 'Attività non ancora avviata' },
+        { value: 'progress', label: 'In Corso', icon: PlayIcon, color: 'text-blue-500', desc: 'Lavoro attualmente attivo' },
+        { value: 'pending', label: 'In Sospeso', icon: ClockIcon, color: 'text-amber-500', desc: 'In attesa di altri fattori' },
+        { value: 'completed', label: 'Completata', icon: CheckCircleIcon, color: 'text-green-500', desc: 'Task portata a termine' }
     ];
 
     const currentStatus = STATUS_OPTIONS.find(opt => opt.value === status) || STATUS_OPTIONS[0];
 
     const handleInternalSave = async () => {
         if (!editor || isArchived) return;
-        await onSave({ title, content: editor.getHTML(), status });
+        await onSave({ title, content: editor.getHTML(), due_date: dueDate || null, status });
     };
 
     const handleInternalDelete = async () => {
@@ -113,30 +125,72 @@ function NoteEditor({ task, isNew, onSave, onDelete, onRestore, isSaving }) {
                         />
                     </div>
 
-                    <div className="flex items-center gap-6">
-                        <div className="relative">
+                    <div className="flex items-center gap-6" ref={statusMenuRef}>
+                        <div className="relative flex flex-col" ref={statusMenuRef}>
                             <button
                                 disabled={isArchived}
-                                onClick={() => setIsDropdownOpen(!isDropdownOpen)}
-                                className="flex items-center justify-between w-52 px-4 py-3 bg-slate-50 dark:bg-slate-800 rounded-xl border border-slate-100 dark:border-slate-700 cursor-pointer disabled:cursor-not-allowed"
-                            >
-                                <div className="flex items-center gap-3 text-[10px] font-black uppercase tracking-widest dark:text-white">
-                                    <currentStatus.icon className={`w-4 h-4 ${currentStatus.color}`} />
-                                    {currentStatus.label}
-                                </div>
-                                <ChevronDownIcon className={`w-3 h-3 text-slate-400 transition-transform ${isDropdownOpen ? 'rotate-180' : ''}`} />
+                                onClick={() => setIsStatusOpen(!isStatusOpen)}
+                                className={`flex items-center gap-3 px-4 py-2 bg-slate-50 dark:bg-slate-800/50 border border-slate-200 dark:border-slate-700 rounded-xl font-black text-[10px] uppercase tracking-widest transition-all 
+                            ${isArchived
+                                    ? 'opacity-50 cursor-not-allowed'
+                                    : 'hover:border-blue-500 cursor-pointer'
+                                }`}>
+                                <currentStatus.icon className={`w-4 h-4 ${currentStatus.color}`} />
+                                {currentStatus.label}
+                                {!isArchived && <ChevronDownIcon className="w-3 h-3 text-slate-400" />}
                             </button>
-                            {isDropdownOpen && (
-                                <div className="absolute top-full right-0 mt-2 w-56 bg-white dark:bg-slate-800 border border-slate-100 dark:border-slate-700 rounded-2xl shadow-2xl overflow-hidden p-1 z-60">
+
+                            <span className="mt-1 ml-1 text-[8px] font-bold text-slate-400 uppercase tracking-tighter">
+                            Stato Attuale
+                        </span>
+
+                            {isStatusOpen && !isArchived && (
+                                <div className="absolute top-full mt-2 w-64 bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-2xl shadow-2xl z-50 overflow-hidden animate-in fade-in zoom-in duration-200">
                                     {STATUS_OPTIONS.map((opt) => (
-                                        <button key={opt.value} onClick={() => { setStatus(opt.value); setIsDropdownOpen(false); }} className="flex items-center gap-3 w-full px-4 py-3 rounded-xl hover:bg-slate-50 dark:hover:bg-slate-700 text-left cursor-pointer">
-                                            <opt.icon className={`w-4 h-4 ${opt.color}`} />
-                                            <span className="text-[10px] font-black uppercase tracking-widest dark:text-slate-300">{opt.label}</span>
+                                        <button
+                                            key={opt.value}
+                                            onClick={() => {
+                                                setStatus(opt.value);
+                                                setIsStatusOpen(false);
+                                            }}
+                                            className="w-full px-4 py-3 text-left hover:bg-slate-50 dark:hover:bg-slate-700 transition-colors border-b last:border-none border-slate-50 dark:border-slate-700/50 flex flex-col"
+                                        >
+                                            <div className="flex items-center gap-2">
+                                                <opt.icon className={`w-4 h-4 ${opt.color}`} />
+                                                <span className="text-[10px] font-black uppercase tracking-widest">{opt.label}</span>
+                                            </div>
+                                            <span className="text-[9px] text-slate-400 font-medium ml-6">{opt.desc}</span>
                                         </button>
                                     ))}
                                 </div>
                             )}
                         </div>
+
+                        {/* Scadenza */}
+                        <div className="flex flex-col group">
+                            <div
+                                className={`relative flex items-center gap-3 px-4 py-2 bg-slate-50 dark:bg-slate-800/50 border border-slate-200 dark:border-slate-700 rounded-xl transition-all overflow-hidden
+                                ${isArchived
+                                    ? 'opacity-50 cursor-not-allowed'
+                                    : 'hover:border-blue-500 cursor-pointer'
+                                }`}
+                                onClick={(e) => {
+                                    if (isArchived) return;
+                                    e.currentTarget.querySelector('input').showPicker();
+                                }}>
+                                <CalendarIcon className="w-4 h-4 text-slate-400 group-hover:text-blue-500 transition-colors" />
+                                <span className="text-[10px] font-black uppercase tracking-widest text-slate-600 dark:text-slate-300">
+                                    {dueDate ? new Date(dueDate).toLocaleDateString('it-IT') : "GG/MM/AAAA"}
+                                </span>
+                                <input type="date" value={dueDate} disabled={isArchived}
+                                    onChange={(e) => setDueDate(e.target.value)}
+                                    className="absolute inset-0 opacity-0 disabled:cursor-not-allowed"/>
+                            </div>
+                            <span className="mt-1 ml-1 text-[8px] font-bold text-slate-400 uppercase tracking-tighter">
+                                Termine Scadenza
+                            </span>
+                        </div>
+
 
                         {!isNew && !isArchived && (
                             <button onClick={() => setShowDeleteModal(true)} className="p-3 text-slate-400 hover:text-red-500 hover:bg-red-50 dark:hover:bg-red-950/30 rounded-xl transition-all cursor-pointer">
