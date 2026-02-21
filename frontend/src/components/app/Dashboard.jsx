@@ -6,9 +6,10 @@ import {
     ListBulletIcon,
     ChevronDownIcon,
     TrashIcon,
-    ArrowPathIcon
 } from "@heroicons/react/24/outline";
 import { Link } from "react-router-dom";
+import FilterSystem from "./FilterSystem.jsx";
+import TaskCard from "./TaskCard.jsx";
 
 // Sotto-componente per le card delle statistiche
 function StatCard({ title, value, icon: Icon, color }) {
@@ -20,8 +21,8 @@ function StatCard({ title, value, icon: Icon, color }) {
     };
 
     return (
-        <div className="p-6 bg-slate-50 dark:bg-slate-800/50 border border-slate-100 dark:border-slate-800 rounded-[2.5rem] flex items-center gap-5 transition-all">
-            <div className={`p-4 rounded-2xl ${colors[color]}`}>
+        <div className="p-3 bg-slate-50 dark:bg-slate-800/50 border border-slate-100 dark:border-slate-800 rounded-3xl flex items-center gap-5 transition-all">
+            <div className={`p-2 rounded-2xl ${colors[color]}`}>
                 <Icon className="w-8 h-8" />
             </div>
             <div>
@@ -38,12 +39,18 @@ function Dashboard({ isTrashView = false }) {
     const [offset, setOffset] = useState(0);
     const [hasMore, setHasMore] = useState(false);
     const [showEmptyTrashModal, setShowEmptyTrashModal] = useState(false);
+    const [filteredTasks, setFilteredTasks] = useState([]);
 
     const LIMIT = 10;
 
     useEffect(() => {
         loadTasks(true);
     }, [isTrashView]);
+
+    useEffect(() => {
+        setFilteredTasks(tasks);
+    }, [tasks]);
+
     const loadTasks = async (reset = false) => {
         try {
             const currentOffset = reset ? 0 : offset;
@@ -135,66 +142,43 @@ function Dashboard({ isTrashView = false }) {
                         </button>
                     )}
                 </header>
-
+                <FilterSystem tasks={tasks}     onFilterChange={(data) => setFilteredTasks(data)}/>
                 <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
-                    {tasks.length > 0 ? (
-                        tasks.map((task) => (
-                            /* La key va qui, sul componente più esterno del map */
-                            <Link to={`/app/task/${task.id}`} key={task.id} className="block group">
-                                <div className="p-5 bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-3xl flex items-center justify-between transition-all duration-300 shadow-sm hover:shadow-xl hover:shadow-blue-500/10 hover:-translate-y-1 border-b-4 hover:border-blue-500">
-                                    <div className="flex items-center gap-4">
-                                        <div className={`p-2 rounded-xl ${isTrashView ? 'bg-red-50 dark:bg-red-900/20' : 'bg-blue-50 dark:bg-blue-900/20'}`}>
-                                            {isTrashView ? (
-                                                <TrashIcon className="w-5 h-5 text-red-500" />
-                                            ) : (
-                                                <ListBulletIcon className="w-5 h-5 text-blue-500" />
-                                            )}
-                                        </div>
-                                        <div>
-                                            <h3 className={`font-bold text-slate-900 dark:text-white transition-colors ${isTrashView ? 'group-hover:text-red-500' : 'group-hover:text-blue-600'}`}>
-                                                {task.title || "Senza titolo"}
-                                            </h3>
-                                            <p className="text-[10px] text-slate-400 font-black uppercase tracking-widest">
-                                                {isTrashView ? "Sola lettura" : `Modificato: ${new Date(task.updated_at).toLocaleDateString()}`}
-                                            </p>
-                                        </div>
-                                    </div>
 
-                                    {/* Badge di stato o di eliminazione */}
-                                    <div className="flex items-center gap-3">
-                                        {isTrashView && (
-                                            <span className="flex items-center gap-1 text-[9px] font-black uppercase px-3 py-1 bg-amber-100 text-amber-600 dark:bg-amber-900/30 rounded-full">
-                                                <ArrowPathIcon className="w-3 h-3" /> Cestinato
-                                            </span>
-                                        )}
-                                        <span className={`text-[10px] font-black uppercase px-3 py-1 rounded-full ${
-                                            task.status === 'completed'
-                                                ? 'bg-green-100 text-green-600 dark:bg-green-900/30'
-                                                : 'bg-slate-100 text-slate-500 dark:bg-slate-700'
-                                        }`}>
-                                            {task.status}
-                                        </span>
-                                    </div>
-                                </div>
-                            </Link>
-                        ))
+                    {filteredTasks.length > 0 ? (
+                        filteredTasks.map(task => <TaskCard key={task.id} task={task} />)
                     ) : (
+                        // Logica per gestire i diversi messaggi di "Vuoto"
                         <div className="col-span-full text-center p-12 bg-slate-50 dark:bg-slate-800/20 rounded-[3rem] border-2 border-dashed border-slate-200 dark:border-slate-800">
-                            <p className="text-slate-500 font-bold uppercase tracking-widest text-xs">Nessuna task trovata</p>
-                            <Link to="task/new" className="inline-block mt-4 text-blue-600 font-black hover:underline decoration-2 underline-offset-4">
-                                CREANE UNA SUBITO
-                            </Link>
+                            {
+                                (isTrashView && tasks.length === 0) ? (
+                                    <div className="flex flex-col items-center gap-4">
+                                        <TrashIcon className={'w-40 text-slate-700'}/>
+                                        <p className="text-slate-500 font-bold uppercase tracking-widest text-xs">
+                                            Il cestino è vuoto
+                                        </p>
+                                    </div>
+                                ) :
+                                (
+                                    <p className="text-slate-500 font-bold uppercase tracking-widest text-xs">
+                                        {tasks.length === 0 ? "Nessuna task presente" : "Nessun risultato per i filtri selezionati"}
+                                    </p>
+                                )
+                            }
+
+                            {tasks.length === 0 && !isTrashView && (
+                                <Link to="task/new" className="inline-block mt-4 text-blue-600 font-black hover:underline decoration-2 underline-offset-4">
+                                    CREANE UNA SUBITO
+                                </Link>
+                            )}
                         </div>
                     )}
                 </div>
 
-                {/* TASTO CARICA ALTRI (Appare solo se hasMore è vero) */}
+                {/* Tasto Carica altri */}
                 {hasMore && (
                     <div className="pt-6 flex justify-center">
-                        <button
-                            onClick={() => loadTasks(false)}
-                            className="cursor-pointer flex items-center gap-2 px-3 py-1  text-slate-500 rounded-2xl font-bold hover:scale-105 transition-all"
-                        >
+                        <button onClick={() => loadTasks(false)} className="cursor-pointer flex items-center gap-2 px-3 py-1 text-slate-500 rounded-2xl font-bold hover:scale-105 transition-all">
                             <ChevronDownIcon className="w-5 h-5 animate-bounce -mb-0.5"/> Carica altri
                         </button>
                     </div>

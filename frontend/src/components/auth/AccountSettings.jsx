@@ -157,8 +157,7 @@ function Settings(){
                         <div>
                             <Link to="/app" className="flex items-center gap-3 px-6 py-3 rounded-xl text-slate-600 dark:text-slate-400
                                             font-bold hover:bg-blue-50 dark:hover:bg-blue-900/20 transition-all group">
-                                <ArrowLeftIcon className="w-5 h-5 transition-transform group-hover:-translate-x-1" />
-                                Torna alla Home
+                                <ArrowLeftIcon className="w-5 h-5 transition-transform group-hover:-translate-x-1"/>
                             </Link>
                         </div>
 
