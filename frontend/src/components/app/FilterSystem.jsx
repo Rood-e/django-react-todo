@@ -78,7 +78,7 @@ function FilterSystem({ tasks, onFilterChange }) {
                 <div className="flex items-center gap-3">
                     <button
                         onClick={() => setIsAdvancedOpen(!isAdvancedOpen)}
-                        className={`flex items-center gap-2 px-4 py-2 rounded-xl text-[10px] font-black uppercase tracking-widest transition-all border-2 
+                        className={`cursor-pointer flex items-center gap-2 px-4 py-2 rounded-xl text-[10px] font-black uppercase tracking-widest transition-all border-2 
                             ${isAdvancedOpen
                             ? 'bg-slate-900 text-white border-slate-900 dark:bg-white dark:text-slate-900 shadow-lg'
                             : 'bg-transparent border-slate-200 dark:border-slate-800 text-slate-500 hover:border-slate-900 dark:hover:border-slate-400 hover:bg-slate-50 dark:hover:bg-slate-800/50'}`}
@@ -90,7 +90,7 @@ function FilterSystem({ tasks, onFilterChange }) {
                     {(selectedStatuses.length > 0 || selectedTypes.length > 0 || timeframe !== 'all') && (
                         <button
                             onClick={() => {setSelectedStatuses([]); setSelectedTypes([]); setTimeframe('all');}}
-                            className="text-[10px] font-black uppercase text-red-500 px-3 py-2 rounded-xl transition-all hover:bg-red-50 dark:hover:bg-red-950/20 hover:scale-105 active:scale-95"
+                            className="cursor-pointer text-[10px] font-black uppercase text-red-500 px-3 py-2 rounded-xl transition-all hover:bg-red-50 dark:hover:bg-red-950/20 hover:scale-105 active:scale-95"
                         >
                             Reset
                         </button>

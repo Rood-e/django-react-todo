@@ -8,8 +8,8 @@ from rest_framework.permissions import AllowAny
 from rest_framework.response import Response
 from rest_framework.views import APIView
 
-from .models import Task
-from .serializers import UserSerializer, TaskSerializer
+from .models import Task, Category
+from .serializers import UserSerializer, TaskSerializer, CategorySerializer
 
 # Contiene la logica di selezione e azione (Il "Cervello").
 # Esempio: getAllTasks().
@@ -136,41 +136,24 @@ class Tasks(APIView):
             return None
 
     def get(self, request, pk=None):
-        # Se c'è un PK, restituiamo la singola task
         if pk:
-            task = self.get_object(pk, request.user)
+            task = Task.objects.prefetch_related('categories').filter(pk=pk, created_by=request.user).first()
             if not task:
                 return Response({"error": "Task non trovata"}, status=status.HTTP_404_NOT_FOUND)
-            serializer = TaskSerializer(task)
-            return Response(serializer.data)
+            return Response(TaskSerializer(task).data)
 
-        try:
-            limit = int(request.query_params.get('limit', 10))
-            offset = int(request.query_params.get('offset', 0))
-        except ValueError:
-            limit = 10
-            offset = 0
-
+        # Parametro per switchare tra attivi e cestino
         active_param = request.query_params.get('active', 'true').lower() == 'true'
 
-        queryset = Task.objects.filter(
+        tasks = Task.objects.filter(
             created_by=request.user,
             is_active=active_param
-        )
-
-        # Contiamo il totale prima di affettare la lista di Task
-        total_count = queryset.count()
-
-        # "Affettiamo" il queryset: [inizio : fine]
-        tasks = queryset[offset : offset + limit]
+        ).prefetch_related('categories').order_by('-created_at')
 
         serializer = TaskSerializer(tasks, many=True)
 
-        return Response({
-            'tasks': serializer.data,
-            'total': total_count,
-            'has_more': offset + limit < total_count
-        })
+        # Restituiamo un array semplice, il frontend filtrerà il resto
+        return Response(serializer.data)
 
     # Aggiungi pk=None anche qui
     def post(self, request, pk=None):
@@ -232,4 +215,67 @@ class Tasks(APIView):
             task.save()
             return Response({"message": "Spostata nel cestino"})
         except Task.DoesNotExist:
+            return Response(status=status.HTTP_404_NOT_FOUND)
+
+class Categories(APIView):
+    # Questi due garantiscono che solo chi ha un TOKEN valido possa entrare
+    authentication_classes = [authentication.TokenAuthentication]
+    permission_classes = [permissions.IsAuthenticated]
+
+    def get_object(self,pk,user):
+        try:
+            return Category.objects.get(pk=pk,user=user)
+        except Category.DoesNotExist:
+            return None
+
+    # Prelievo dell'utente
+    def get(self, request, pk=None):
+        if pk:
+            category = self.get_object(pk,request.user)
+            if not category:
+                return Response({"error":"Categoria non trovata"}, status=status.HTTP_404_NOT_FOUND)
+            serializer = CategorySerializer(category)
+            return Response(serializer.data)
+
+        categories = Category.objects.filter(user=request.user)
+        serializer = CategorySerializer(categories,many=True)
+
+        return Response(serializer.data)
+
+    def post(self, request, pk=None):
+        serializer = CategorySerializer(data=request.data)
+        if serializer.is_valid():
+            category = serializer.save(user=request.user)
+            return Response({
+                "message": "Categoria creata con successo",
+                "id": category.id,
+                "color": category.color
+            }, status=status.HTTP_201_CREATED)
+        return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+
+    def put(self, request, pk=None):
+        if not pk:
+            return Response({'error': 'ID mancante'}, status=status.HTTP_400_BAD_REQUEST)
+
+        category = self.get_object(pk, request.user)
+        if not category:
+            return Response({'error': 'Categoria non trovata'}, status=status.HTTP_404_NOT_FOUND)
+
+        # partial=True è fondamentale per aggiornamenti flessibili
+        serializer = CategorySerializer(category, data=request.data, partial=True)
+
+        if serializer.is_valid():
+            serializer.save()
+            return Response({'message': 'Modifiche salvate!', 'data': serializer.data})
+        return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+
+    def delete(self, request, pk=None):
+        if not pk:
+            return Response({"error": "ID mancante"}, status=status.HTTP_400_BAD_REQUEST)
+
+        try:
+            category = Category.objects.get(pk=pk, user=request.user)
+            category.delete()
+            return Response({"message": "Categoria eliminata con successo"})
+        except Category.DoesNotExist:
             return Response(status=status.HTTP_404_NOT_FOUND)

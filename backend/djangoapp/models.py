@@ -1,3 +1,5 @@
+import random
+
 from django.db import models
 from django.contrib.auth.models import AbstractUser
 
@@ -12,8 +14,13 @@ class User(AbstractUser):
     def __str__(self):
         return self.username
 
+def get_random_color():
+    colors = ['#EF4444', '#3B82F6', '#22c55e', '#f97316', '#a855f7']
+    return random.choice(colors)
+
 class Category(models.Model):
     name = models.CharField(max_length=100)
+    color = models.CharField(max_length=7,default=get_random_color)
     user = models.ForeignKey(User,on_delete=models.CASCADE)
     def __str__(self):
         return self.name

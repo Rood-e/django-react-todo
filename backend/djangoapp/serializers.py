@@ -1,5 +1,5 @@
 from rest_framework import serializers
-from .models import User, Task
+from .models import User, Task, Category
 
 # Contiene la logica di trasformazione.
 # Esempio: Un metodo che prende la data dal DB e la formatta in "20 ore fa" invece di "2026-01-30".
@@ -43,7 +43,30 @@ class UserSerializer(serializers.ModelSerializer):
         )
         return user
 
+class CategorySerializer(serializers.ModelSerializer):
+    class Meta:
+        model = Category
+
+        fields = [
+            'id', 'name', 'color', 'user'
+        ]
+        read_only_fields = ['user']
+
+        extra_kwargs = {
+            'name': {
+                'error_messages': {
+                    'blank': 'Il nome è necessario',
+                    'required': 'Impossibile creare una categoria senza nome'
+                }
+            }
+        }
+
 class TaskSerializer(serializers.ModelSerializer):
+    categories = serializers.PrimaryKeyRelatedField(
+        many=True,
+        queryset=Category.objects.all(),
+        required=False
+    )
     # Mostriamo lo username del creatore invece dell'ID (opzionale, ma utile)
     created_by_name = serializers.ReadOnlyField(source='created_by.username')
 
@@ -69,3 +92,11 @@ class TaskSerializer(serializers.ModelSerializer):
                 }
             }
         }
+
+    def validate_categories(self, value):
+        user = self.context['request'].user
+        # Verifica che tutte le categorie inviate appartengano all'utente
+        for category in value:
+            if category.user != user:
+                raise serializers.ValidationError(f"La categoria {category.name} non ti appartiene.")
+        return value

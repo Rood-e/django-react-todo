@@ -35,59 +35,60 @@ function StatCard({ title, value, icon: Icon, color }) {
 
 function Dashboard({ isTrashView = false }) {
     const [tasks, setTasks] = useState([]);
-    const [stats, setStats] = useState(null);
-    const [offset, setOffset] = useState(0);
-    const [hasMore, setHasMore] = useState(false);
-    const [showEmptyTrashModal, setShowEmptyTrashModal] = useState(false);
     const [filteredTasks, setFilteredTasks] = useState([]);
+    const [categoriesMap, setCategoriesMap] = useState({});
+    const [stats, setStats] = useState({ total: 0, completed: 0, pending: 0 });
+    const [loading, setLoading] = useState(true);
+    const [showEmptyTrashModal, setShowEmptyTrashModal] = useState(false);
 
-    const LIMIT = 10;
+
+    //TODO: guarda console e aggiusta chiamate API
 
     useEffect(() => {
-        loadTasks(true);
+        initDashboard();
     }, [isTrashView]);
 
-    useEffect(() => {
-        setFilteredTasks(tasks);
-    }, [tasks]);
-
-    const loadTasks = async (reset = false) => {
+    const initDashboard = async () => {
+        setLoading(true);
         try {
-            const currentOffset = reset ? 0 : offset;
-            // Aggiungiamo il filtro active basato sulla prop isTrashView
-            const response = await api.get(`tasks/?limit=${LIMIT}&offset=${currentOffset}&active=${!isTrashView}`);
+            // Carichiamo categorie e task in parallelo (più veloce)
+            const [catRes, taskRes] = await Promise.all([
+                api.get('categories/'),
+                api.get(`tasks/?active=${!isTrashView}`)
+            ]);
 
-            const newTasks = response.data.tasks;
-            const total = response.data.total;
+            // Creiamo la mappa delle categorie [ID]: {dati}
+            const map = {};
+            catRes.data.forEach(cat => {
+                map[cat.id] = { name: cat.name, color: cat.color };
+            });
+            setCategoriesMap(map);
 
-            if (reset) {
-                setTasks(newTasks);
-                setOffset(LIMIT);
-            } else {
-                setTasks(prev => [...prev, ...newTasks]);
-                setOffset(currentOffset + LIMIT);
-            }
+            // Salviamo i task (lista completa dal backend)
+            const allTasks = taskRes.data;
+            setTasks(allTasks);
+            setFilteredTasks(allTasks);
 
-            setHasMore(response.data.has_more);
-
-            // Statistiche dinamiche
+            // Calcolo statistiche locale
             setStats({
-                total: total,
-                completed: newTasks.filter(t => t.status === 'completed').length,
-                pending: total - newTasks.filter(t => t.status === 'completed').length
+                total: allTasks.length,
+                completed: allTasks.filter(t => t.status === 'completed').length,
+                pending: allTasks.filter(t => t.status !== 'completed').length
             });
 
         } catch (err) {
-            console.error("Errore nel caricamento:", err);
+            console.error("Errore inizializzazione Dashboard:", err);
+        } finally {
+            setLoading(false);
         }
-
     };
 
     const handleEmptyTrash = async () => {
         try {
             await api.delete('tasks/?action=empty_trash')
             setTasks([]);
-            setStats(prev => ({ ...prev, total: 0 }));
+            setFilteredTasks([]);
+            setStats({ total: 0, completed: 0, pending: 0 });
         } catch (err) {
             console.error("Errore svuotamento cestino", err);
         } finally {
@@ -142,47 +143,40 @@ function Dashboard({ isTrashView = false }) {
                         </button>
                     )}
                 </header>
-                <FilterSystem tasks={tasks}     onFilterChange={(data) => setFilteredTasks(data)}/>
+
+                {/* Filtri Avanzati */}
+                {!loading && (
+                    <FilterSystem
+                        tasks={tasks}
+                        onFilterChange={setFilteredTasks}
+                    />
+                )}
+
                 <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
 
                     {filteredTasks.length > 0 ? (
-                        filteredTasks.map(task => <TaskCard key={task.id} task={task} />)
+                        filteredTasks.map(task => (
+                            <TaskCard key={task.id} task={task}
+                                categoriesMap={categoriesMap}/>
+                        ))
                     ) : (
                         // Logica per gestire i diversi messaggi di "Vuoto"
                         <div className="col-span-full text-center p-12 bg-slate-50 dark:bg-slate-800/20 rounded-[3rem] border-2 border-dashed border-slate-200 dark:border-slate-800">
-                            {
-                                (isTrashView && tasks.length === 0) ? (
-                                    <div className="flex flex-col items-center gap-4">
-                                        <TrashIcon className={'w-40 text-slate-700'}/>
-                                        <p className="text-slate-500 font-bold uppercase tracking-widest text-xs">
-                                            Il cestino è vuoto
-                                        </p>
-                                    </div>
-                                ) :
-                                (
+                            {!loading && (
+                                <>
                                     <p className="text-slate-500 font-bold uppercase tracking-widest text-xs">
                                         {tasks.length === 0 ? "Nessuna task presente" : "Nessun risultato per i filtri selezionati"}
                                     </p>
-                                )
-                            }
-
-                            {tasks.length === 0 && !isTrashView && (
-                                <Link to="task/new" className="inline-block mt-4 text-blue-600 font-black hover:underline decoration-2 underline-offset-4">
-                                    CREANE UNA SUBITO
-                                </Link>
+                                    {tasks.length === 0 && !isTrashView && (
+                                        <Link to="task/new" className="inline-block mt-4 text-blue-600 font-black hover:underline decoration-2 underline-offset-4">
+                                            CREANE UNA SUBITO
+                                        </Link>
+                                    )}
+                                </>
                             )}
                         </div>
                     )}
                 </div>
-
-                {/* Tasto Carica altri */}
-                {hasMore && (
-                    <div className="pt-6 flex justify-center">
-                        <button onClick={() => loadTasks(false)} className="cursor-pointer flex items-center gap-2 px-3 py-1 text-slate-500 rounded-2xl font-bold hover:scale-105 transition-all">
-                            <ChevronDownIcon className="w-5 h-5 animate-bounce -mb-0.5"/> Carica altri
-                        </button>
-                    </div>
-                )}
             </section>
 
             {/* Modale di conferma svuotamento cestino */}
