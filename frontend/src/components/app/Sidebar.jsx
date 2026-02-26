@@ -2,26 +2,16 @@ import {
     CalendarDaysIcon, PlusIcon, Cog6ToothIcon, ChartBarSquareIcon,
     ArrowLeftOnRectangleIcon, TrashIcon
 } from '@heroicons/react/24/outline';
-import { Link, useNavigate, useLocation } from "react-router-dom";
+import { Link, useLocation } from "react-router-dom";
 import { useState, useEffect } from "react";
-import api from "../../api.js";
 
-function Sidebar({ isOpen, setIsOpen }) {
+function Sidebar({ isOpen, setIsOpen, tasks }) {
     const location = useLocation();
     const [counts, setCounts] = useState({ active: 0, trash: 0 });
 
     useEffect(() => {
-        const fetchCounts = async () => {
-            try {
-                const [activeRes, trashRes] = await Promise.all([
-                    api.get('tasks/?active=true&limit=1'),
-                    api.get('tasks/?active=false&limit=1')
-                ]);
-                setCounts({ active: activeRes.data.total || 0, trash: trashRes.data.total || 0 });
-            } catch (err) { console.error(err); }
-        };
-        fetchCounts();
-    }, [location.pathname]);
+        setCounts({ active: tasks.filter(task => task.is_active === true).length, trash: tasks.filter(task => task.is_active === false).length });
+    }, [tasks])
 
     const navItems = [
         { to: "/app", icon: ChartBarSquareIcon, label: "Dashboard", count: counts.active, color: "text-blue-600", bg: "bg-blue-600" },

@@ -142,12 +142,8 @@ class Tasks(APIView):
                 return Response({"error": "Task non trovata"}, status=status.HTTP_404_NOT_FOUND)
             return Response(TaskSerializer(task).data)
 
-        # Parametro per switchare tra attivi e cestino
-        active_param = request.query_params.get('active', 'true').lower() == 'true'
-
         tasks = Task.objects.filter(
-            created_by=request.user,
-            is_active=active_param
+            created_by=request.user
         ).prefetch_related('categories').order_by('-created_at')
 
         serializer = TaskSerializer(tasks, many=True)

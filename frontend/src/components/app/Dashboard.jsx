@@ -4,10 +4,9 @@ import {
     CheckCircleIcon,
     ClockIcon,
     ListBulletIcon,
-    ChevronDownIcon,
     TrashIcon,
 } from "@heroicons/react/24/outline";
-import { Link } from "react-router-dom";
+import {Link, useOutletContext} from "react-router-dom";
 import FilterSystem from "./FilterSystem.jsx";
 import TaskCard from "./TaskCard.jsx";
 
@@ -34,6 +33,8 @@ function StatCard({ title, value, icon: Icon, color }) {
 }
 
 function Dashboard({ isTrashView = false }) {
+    const { appTasks } = useOutletContext();
+
     const [tasks, setTasks] = useState([]);
     const [filteredTasks, setFilteredTasks] = useState([]);
     const [categoriesMap, setCategoriesMap] = useState({});
@@ -41,47 +42,53 @@ function Dashboard({ isTrashView = false }) {
     const [loading, setLoading] = useState(true);
     const [showEmptyTrashModal, setShowEmptyTrashModal] = useState(false);
 
-
-    //TODO: guarda console e aggiusta chiamate API
-
     useEffect(() => {
-        initDashboard();
-    }, [isTrashView]);
+        const initDashboard = () => {
+            if (!appTasks) return;
 
-    const initDashboard = async () => {
-        setLoading(true);
-        try {
-            // Carichiamo categorie e task in parallelo (più veloce)
-            const [catRes, taskRes] = await Promise.all([
-                api.get('categories/'),
-                api.get(`tasks/?active=${!isTrashView}`)
-            ]);
+            setLoading(true);
 
-            // Creiamo la mappa delle categorie [ID]: {dati}
-            const map = {};
-            catRes.data.forEach(cat => {
-                map[cat.id] = { name: cat.name, color: cat.color };
-            });
-            setCategoriesMap(map);
+            try {
+                const allTasks = appTasks.filter(task => task.is_active === !isTrashView);
 
-            // Salviamo i task (lista completa dal backend)
-            const allTasks = taskRes.data;
-            setTasks(allTasks);
-            setFilteredTasks(allTasks);
+                setTasks(allTasks);
+                setFilteredTasks(allTasks);
 
-            // Calcolo statistiche locale
-            setStats({
-                total: allTasks.length,
-                completed: allTasks.filter(t => t.status === 'completed').length,
-                pending: allTasks.filter(t => t.status !== 'completed').length
-            });
+                // Calcolo statistiche locale
+                setStats({
+                    total: allTasks.length,
+                    completed: allTasks.filter(t => t.status === 'completed').length,
+                    pending: allTasks.filter(t => t.status !== 'completed').length
+                });
 
-        } catch (err) {
-            console.error("Errore inizializzazione Dashboard:", err);
-        } finally {
-            setLoading(false);
+            } catch (err) {
+                console.error("Errore inizializzazione Dashboard:", err);
+            } finally {
+                setLoading(false);
+            }
         }
-    };
+
+        initDashboard();
+    }, [isTrashView,appTasks]);
+
+    // Caricamento categorie
+    useEffect(() => {
+        const initCats = async () => {
+            try {
+                const catRes = await api.get('categories/');
+
+                // Creiamo la mappa delle categorie [ID]: {dati}
+                const map = {};
+                catRes.data.forEach(cat => {
+                    map[cat.id] = { name: cat.name, color: cat.color };
+                });
+                setCategoriesMap(map);
+            } catch (err) {}
+        }
+
+        initCats();
+    },[]);
+
 
     const handleEmptyTrash = async () => {
         try {
