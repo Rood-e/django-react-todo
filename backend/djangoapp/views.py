@@ -245,7 +245,8 @@ class Categories(APIView):
             return Response({
                 "message": "Categoria creata con successo",
                 "id": category.id,
-                "color": category.color
+                "color": category.color,
+                "name": category.name,
             }, status=status.HTTP_201_CREATED)
         return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
 

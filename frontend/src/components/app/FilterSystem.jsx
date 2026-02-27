@@ -4,10 +4,11 @@ import {
     TagIcon, CalendarIcon, Squares2X2Icon
 } from "@heroicons/react/24/outline";
 
-function FilterSystem({ tasks, onFilterChange }) {
+function FilterSystem({ tasks, onFilterChange, showModal, setShowModal, categories }) {
     const [isAdvancedOpen, setIsAdvancedOpen] = useState(false);
     const [selectedStatuses, setSelectedStatuses] = useState([]);
     const [selectedTypes, setSelectedTypes] = useState([]);
+    const [selectedCategories, setSelectedCategories] = useState([]);
     const [timeframe, setTimeframe] = useState('all');
     const [sortBy, setSortBy] = useState('newest');
     const [isSortOpen, setIsSortOpen] = useState(false);
@@ -41,6 +42,17 @@ function FilterSystem({ tasks, onFilterChange }) {
         let result = [...tasks];
         if (selectedStatuses.length > 0) result = result.filter(t => selectedStatuses.includes(t.status));
         if (selectedTypes.length > 0) result = result.filter(t => selectedTypes.includes(t.type));
+        if (selectedCategories.length > 0) {
+            result = result.filter(t => {
+                // Se il task non ha categorie, lo escludiamo
+                if (!t.categories || !Array.isArray(t.categories)) return false;
+
+                // Trasformiamo gli ID del task in stringhe per il confronto con selectedCategories
+                return t.categories.some(catId =>
+                    selectedCategories.includes(catId.toString())
+                );
+            });
+        }
 
         if (timeframe !== 'all') {
             const now = new Date(); now.setHours(0,0,0,0);
@@ -68,28 +80,44 @@ function FilterSystem({ tasks, onFilterChange }) {
         });
 
         onFilterChange(result);
-    }, [selectedStatuses, selectedTypes, timeframe, sortBy, tasks]);
+    }, [selectedStatuses, selectedTypes, selectedCategories, timeframe, sortBy, tasks]);
 
     const toggle = (val, state, set) => set(prev => prev.includes(val) ? prev.filter(i => i !== val) : [...prev, val]);
 
     return (
-        <div className="mb-10 space-y-4">
+        <div className="w-full mb-10 space-y-4">
             <div className="flex flex-wrap items-center justify-between gap-4">
                 <div className="flex items-center gap-3">
-                    <button
-                        onClick={() => setIsAdvancedOpen(!isAdvancedOpen)}
-                        className={`cursor-pointer flex items-center gap-2 px-4 py-2 rounded-xl text-[10px] font-black uppercase tracking-widest transition-all border-2 
-                            ${isAdvancedOpen
-                            ? 'bg-slate-900 text-white border-slate-900 dark:bg-white dark:text-slate-900 shadow-lg'
-                            : 'bg-transparent border-slate-200 dark:border-slate-800 text-slate-500 hover:border-slate-900 dark:hover:border-slate-400 hover:bg-slate-50 dark:hover:bg-slate-800/50'}`}
-                    >
-                        <AdjustmentsHorizontalIcon className="w-4 h-4" />
-                        Filtri Avanzati
-                    </button>
-
-                    {(selectedStatuses.length > 0 || selectedTypes.length > 0 || timeframe !== 'all') && (
+                    <div className="flex items-center gap-2">
                         <button
-                            onClick={() => {setSelectedStatuses([]); setSelectedTypes([]); setTimeframe('all');}}
+                            onClick={() => setIsAdvancedOpen(!isAdvancedOpen)}
+                            className={`cursor-pointer flex items-center gap-2 px-4 py-2 rounded-xl text-[10px] font-black uppercase tracking-widest transition-all border-2 
+                            ${isAdvancedOpen ? 'bg-slate-900 text-white border-slate-900 dark:bg-white dark:text-slate-900 shadow-lg' : 
+                                'bg-transparent border-slate-200 dark:border-slate-800 text-slate-500 hover:border-slate-900 dark:hover:border-slate-400 hover:bg-slate-50 dark:hover:bg-slate-800/50'}`}
+                        >
+                            <AdjustmentsHorizontalIcon className="w-4 h-4" />
+                            Filtri Avanzati
+                        </button>
+                        {/* Categorie */}
+                        <button
+                            onClick={() => setShowModal(true)}
+                            className={`cursor-pointer flex items-center gap-2 px-6 py-2 rounded-xl text-[10px] font-black uppercase tracking-widest transition-all border-2 
+                                ${showModal? 'bg-slate-900 text-white border-slate-900 dark:bg-white dark:text-slate-900 shadow-lg'
+                                : 'bg-transparent border-slate-200 dark:border-slate-800 text-slate-500 hover:border-slate-900 dark:hover:border-slate-400 hover:bg-slate-50 dark:hover:bg-slate-800/50'}`}>
+                            <TagIcon className="w-4 h-4" />
+                            Nuova Categoria
+                        </button>
+                    </div>
+
+
+                    {(selectedStatuses.length > 0 || selectedTypes.length > 0 || timeframe !== 'all' || selectedCategories.length > 0) && (
+                        <button
+                            onClick={() => {
+                                setSelectedStatuses([]);
+                                setSelectedTypes([]);
+                                setTimeframe('all');
+                                setSelectedCategories([]); // Aggiungi questo
+                            }}
                             className="cursor-pointer text-[10px] font-black uppercase text-red-500 px-3 py-2 rounded-xl transition-all hover:bg-red-50 dark:hover:bg-red-950/20 hover:scale-105 active:scale-95"
                         >
                             Reset
@@ -124,7 +152,7 @@ function FilterSystem({ tasks, onFilterChange }) {
             </div>
 
             {isAdvancedOpen && (
-                <div className="p-8 bg-slate-50 dark:bg-slate-900/50 border-2 border-slate-200 dark:border-slate-800 rounded-[2.5rem] grid grid-cols-1 md:grid-cols-3 gap-10 animate-in fade-in zoom-in duration-200">
+                <div className="relative left-0 p-8 bg-slate-50 dark:bg-slate-900/50 border-2 border-slate-200 dark:border-slate-800 rounded-[2.5rem] grid grid-cols-1 md:grid-cols-3 gap-10 animate-in fade-in zoom-in duration-200">
                     {/* STATO */}
                     <div className="space-y-4">
                         <p className="flex items-center gap-2 text-[10px] font-black uppercase tracking-[0.2em] text-slate-400"><TagIcon className="w-3 h-3"/> Stato Task</p>
@@ -184,6 +212,30 @@ function FilterSystem({ tasks, onFilterChange }) {
                                     {tf.label}
                                 </button>
                             ))}
+                        </div>
+                    </div>
+
+                    {/* Sezione Categorie nel Pannello Avanzato */}
+                    <div className="col-span-1 md:col-span-3 space-y-4 pt-6 border-t border-slate-200 dark:border-slate-800">
+                        <p className="flex items-center gap-2 text-[10px] font-black uppercase tracking-[0.2em] text-slate-400">
+                            <TagIcon className="w-3 h-3"/> Categorie
+                        </p>
+                        <div className="flex flex-wrap gap-2">
+                            {Object.entries(categories).map(([id, cat]) => {
+                                const isSelected = selectedCategories.includes(id);
+                                return (
+                                    <button key={id}    onClick={() => toggle(id, selectedCategories, setSelectedCategories)}
+                                        className={`px-3 py-1.5 rounded-lg text-[9px] font-black uppercase border-2 transition-all flex items-center gap-2 hover:brightness-140
+                                            ${!isSelected ? 'border-slate-200 dark:border-slate-800  text-slate-400' : ''}`}
+                                        style={{
+                                            borderColor: cat.color,
+                                            backgroundColor: isSelected ? cat.color + "35" : '',
+                                            color: cat.color,
+                                        }}>
+                                        {cat.name}
+                                    </button>
+                                );
+                            })}
                         </div>
                     </div>
                 </div>

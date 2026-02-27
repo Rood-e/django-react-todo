@@ -1,15 +1,11 @@
 import { useEffect, useState } from "react";
 import api from "../../api.js";
-import {
-    CheckCircleIcon,
-    ClockIcon,
-    ListBulletIcon,
-    TrashIcon,
-} from "@heroicons/react/24/outline";
+import {CheckCircleIcon, ClockIcon, ListBulletIcon, TrashIcon } from "@heroicons/react/24/outline";
 import {Link, useOutletContext} from "react-router-dom";
 import FilterSystem from "./FilterSystem.jsx";
 import TaskCard from "./TaskCard.jsx";
 import DeletionModal from "../aesthetic/DeletionModal.jsx";
+import CreationModal from "../aesthetic/CreationModal.jsx";
 
 // Sotto-componente per le card delle statistiche
 function StatCard({ title, value, icon: Icon, color }) {
@@ -42,8 +38,10 @@ function Dashboard({ isTrashView = false }) {
     const [stats, setStats] = useState({ total: 0, completed: 0, pending: 0 });
     const [loading, setLoading] = useState(true);
     const [showEmptyTrashModal, setShowEmptyTrashModal] = useState(false);
+    const [showCategoryCreationModal, setshowCategoryCreationModal] = useState(false);
 
     useEffect(() => {
+        console.log(appTasks);
         const initDashboard = () => {
             if (!appTasks) return;
 
@@ -105,6 +103,22 @@ function Dashboard({ isTrashView = false }) {
         }
     };
 
+    const onSave = async (payload) => {
+        try {
+            const res = await api.post("categories/", { ...payload });
+
+            setCategoriesMap(prev => ({
+                ...prev,
+                [res.data.id] : {
+                    name: res.data.name,
+                    color: res.data.color,
+                },
+            }));
+        } finally {
+            setshowCategoryCreationModal(false);
+        }
+    };
+
     return (
         <div className="space-y-10 animate-in fade-in duration-500">
             {/* INTESTAZIONE DINAMICA */}
@@ -158,6 +172,9 @@ function Dashboard({ isTrashView = false }) {
                     <FilterSystem
                         tasks={tasks}
                         onFilterChange={setFilteredTasks}
+                        showModal={showCategoryCreationModal}
+                        setShowModal={setshowCategoryCreationModal}
+                        categories={categoriesMap}
                     />
                 )}
 
@@ -193,6 +210,7 @@ function Dashboard({ isTrashView = false }) {
                             icon={TrashIcon} action={handleEmptyTrash} description={`Stai per eliminare definitivamente tutte le note presenti nel cestino. Questa azione non può essere annullata in alcun modo.`}
                             title={'Svuotare il cestino?'}/>
 
+            <CreationModal  showModal={showCategoryCreationModal} setShowModal={setshowCategoryCreationModal} onSave={onSave}/>
         </div>
     );
 }
