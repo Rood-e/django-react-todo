@@ -1,4 +1,4 @@
-import {useNavigate, useParams} from "react-router-dom";
+import {useNavigate, useOutletContext, useParams} from "react-router-dom";
 import { useState, useEffect } from "react";
 import api from "../../api.js";
 
@@ -38,6 +38,8 @@ function TypeCard({ title, desc, icon: Icon, onClick }) {
 }
 
 function TaskDetail() {
+    const { setAppTasks } = useOutletContext();
+
     const navigate = useNavigate();
     const { id } = useParams();
     const isNew = id === 'new';
@@ -68,11 +70,19 @@ function TaskDetail() {
             setIsSaving(true);
             if (isNew) {
                 const res = await api.post("tasks/", { ...payload, type: selectedType });
+                setAppTasks(prev => [payload, ...prev]);
                 navigate(`/app/task/${res.data.id}`, { replace: true });
             } else {
                 await api.put(`tasks/${id}/`, payload);
-                setTask(prev => ({ ...prev, ...payload }));
+                setTask(prev => ({ ...prev, ...payload }))
+                setAppTasks(prev => prev.map(t => {
+                    if (t.id === Number(id))
+                        return { ...t, ...payload };
+                    return t;
+                }));
             }
+        } catch (err) {
+            console.error(err);
         } finally {
             setIsSaving(false);
         }
@@ -82,7 +92,27 @@ function TaskDetail() {
         setIsSaving(true);
         try {
             await api.delete(`tasks/${id}/`);
-            // Se eravamo già nel cestino o abbiamo appena eliminato, torniamo alla lista
+
+            setAppTasks(prev => {
+                const numericId = Number(id);
+
+                // Se il task deve diventare attivo, aggiorna l'oggetto nella lista
+                if (task.is_active)
+                    return prev.map(t => t.id === numericId ? { ...t, is_active: false } : t);
+
+                setAppTasks(prev => {
+                    return prev.map(t => {
+                        console.log(t)
+                        if (t.id === Number(id) && t.is_active)
+                            return { ...t, is_active: false };
+                        else if (t.id !== Number(id))
+                            return t;
+                    });
+                });
+
+                return prev.filter(t => t.id !== numericId);
+            });
+
             navigate("/app", { replace: true });
         } finally {
             setIsSaving(false);
@@ -92,8 +122,20 @@ function TaskDetail() {
     const onRestore = async () => {
         setIsSaving(true);
         try {
+            // Il backend deve restituire il task aggiornato
             await api.put(`tasks/${id}/`, { action: 'restore' });
+
+            setAppTasks(prev => {
+                return prev.map(prev => {
+                    if (prev.id === Number(id))
+                        return { ...prev, is_active: true };
+                    return prev;
+                });
+            });
+
             setTask(prev => ({ ...prev, is_active: true }));
+        } catch (err) {
+            console.error(err);
         } finally {
             setIsSaving(false);
         }

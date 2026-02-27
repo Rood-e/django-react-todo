@@ -7,6 +7,7 @@ import {
     CloudArrowDownIcon
 } from "@heroicons/react/24/outline";
 import { useNavigate } from "react-router-dom";
+import DeletionModal from "../../aesthetic/DeletionModal.jsx";
 
 const STATUS_OPTIONS = [
     { value: 'tostart', label: 'Da Iniziare', icon: StopIcon, color: 'text-slate-400', desc: 'Attività non ancora avviata' },
@@ -129,30 +130,27 @@ function ChecklistEditor({ task, isNew, onSave, onDelete, onRestore, isSaving })
                     <div className="flex flex-col group">
                         <div
                             className={`relative flex items-center gap-3 px-4 py-2 bg-slate-50 dark:bg-slate-800/50 border border-slate-200 dark:border-slate-700 rounded-xl transition-all overflow-hidden
-            ${isArchived
-                                ? 'opacity-50 cursor-not-allowed'
-                                : 'hover:border-blue-500 cursor-pointer'
-                            }`}
-                            onClick={(e) => {
-                                if (isArchived) return;
-                                e.currentTarget.querySelector('input').showPicker();
-                            }}
-                        >
-                            <CalendarIcon className="w-4 h-4 text-slate-400 group-hover:text-blue-500 transition-colors" />
-                            <span className="text-[10px] font-black uppercase tracking-widest text-slate-600 dark:text-slate-300">
-            {dueDate ? new Date(dueDate).toLocaleDateString('it-IT') : "GG/MM/AAAA"}
-        </span>
-                            <input
-                                type="date"
-                                value={dueDate}
-                                disabled={isArchived}
-                                onChange={(e) => setDueDate(e.target.value)}
-                                className="absolute inset-0 opacity-0 disabled:cursor-not-allowed"
-                            />
+                                ${isArchived    ? 'opacity-50 cursor-not-allowed'
+                                                : 'hover:border-blue-500 cursor-pointer'}`}
+                                onClick={(e) => {
+                                    if (isArchived) return;
+                                    e.currentTarget.querySelector('input').showPicker();
+                                }}>
+                                    <CalendarIcon className="w-4 h-4 text-slate-400 group-hover:text-blue-500 transition-colors" />
+                                    <span className="text-[10px] font-black uppercase tracking-widest text-slate-600 dark:text-slate-300">
+                                        {dueDate ? new Date(dueDate).toLocaleDateString('it-IT') : "GG/MM/AAAA"}
+                                    </span>
+                                <input
+                                    type="date"
+                                    value={dueDate}
+                                    disabled={isArchived}
+                                    onChange={(e) => setDueDate(e.target.value)}
+                                    className="absolute inset-0 opacity-0 disabled:cursor-not-allowed"
+                                />
                         </div>
                         <span className="mt-1 ml-1 text-[8px] font-bold text-slate-400 uppercase tracking-tighter">
-        Termine Scadenza
-    </span>
+                            Termine Scadenza
+                        </span>
                     </div>
                 </div>
 
@@ -222,34 +220,11 @@ function ChecklistEditor({ task, isNew, onSave, onDelete, onRestore, isSaving })
                     </button>
                 )}
             </div>
-            {/* MODALE CONFERMA ELIMINAZIONE */}
-            {showDeleteModal && (
-                <div className="fixed inset-0 z-100 flex items-center justify-center p-4 bg-slate-900/40 backdrop-blur-sm animate-in fade-in duration-200">
-                    <div className="bg-white dark:bg-slate-900 w-full max-w-sm rounded-[2.5rem] p-8 shadow-2xl border border-slate-100 dark:border-slate-800 animate-in zoom-in-95 duration-200">
-                        <div className="flex flex-col items-center text-center">
-                            <div className="w-16 h-16 bg-red-50 dark:bg-red-900/20 rounded-2xl flex items-center justify-center mb-6">
-                                <TrashIcon className="w-8 h-8 text-red-500" />
-                            </div>
-                            <h3 className="text-xl font-black uppercase tracking-tight text-slate-900 dark:text-white mb-2">
-                                {isArchived ? "Elimina Definitivamente" : "Sposta nel Cestino"}
-                            </h3>
-                            <p className="text-sm text-slate-500 dark:text-slate-400 mb-8 leading-relaxed">
-                                {isArchived
-                                    ? "Questa azione è irreversibile. La nota verrà rimossa permanentemente."
-                                    : "La nota non sarà più visibile nella dashboard principale, ma potrai ripristinarla dal cestino."}
-                            </p>
-                            <div className="flex flex-col w-full gap-3">
-                                <button onClick={handleInternalDelete} className="w-full py-4 bg-red-500 hover:bg-red-600 text-white rounded-2xl font-black text-xs uppercase tracking-[0.2em] transition-all shadow-lg active:scale-95 cursor-pointer">
-                                    Conferma
-                                </button>
-                                <button onClick={() => setShowDeleteModal(false)} className="w-full py-4 bg-slate-100 dark:bg-slate-800 text-slate-500 dark:text-slate-400 rounded-2xl font-black text-xs uppercase tracking-[0.2em] hover:bg-slate-200 transition-all cursor-pointer">
-                                    Annulla
-                                </button>
-                            </div>
-                        </div>
-                    </div>
-                </div>
-            )}
+
+            <DeletionModal  showModal={showDeleteModal} setShowModal={setShowDeleteModal}
+                            icon={TrashIcon} action={handleInternalDelete} title={isArchived ? "Elimina Definitivamente" : "Sposta nel Cestino"}
+                            description={isArchived ? "Questa azione è irreversibile. La nota verrà rimossa permanentemente."
+                                : "La nota non sarà più visibile nella dashboard principale, ma potrai ripristinarla dal cestino."}/>
         </div>
     );
 }

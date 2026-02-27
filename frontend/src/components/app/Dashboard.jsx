@@ -9,6 +9,7 @@ import {
 import {Link, useOutletContext} from "react-router-dom";
 import FilterSystem from "./FilterSystem.jsx";
 import TaskCard from "./TaskCard.jsx";
+import DeletionModal from "../aesthetic/DeletionModal.jsx";
 
 // Sotto-componente per le card delle statistiche
 function StatCard({ title, value, icon: Icon, color }) {
@@ -33,7 +34,7 @@ function StatCard({ title, value, icon: Icon, color }) {
 }
 
 function Dashboard({ isTrashView = false }) {
-    const { appTasks } = useOutletContext();
+    const { appTasks, setAppTasks } = useOutletContext();
 
     const [tasks, setTasks] = useState([]);
     const [filteredTasks, setFilteredTasks] = useState([]);
@@ -95,6 +96,7 @@ function Dashboard({ isTrashView = false }) {
             await api.delete('tasks/?action=empty_trash')
             setTasks([]);
             setFilteredTasks([]);
+            setAppTasks(prevTasks => prevTasks.filter(t => t.is_active === true));
             setStats({ total: 0, completed: 0, pending: 0 });
         } catch (err) {
             console.error("Errore svuotamento cestino", err);
@@ -186,45 +188,11 @@ function Dashboard({ isTrashView = false }) {
                 </div>
             </section>
 
-            {/* Modale di conferma svuotamento cestino */}
-            {showEmptyTrashModal && (
-                <div className="fixed inset-0 z-200 flex items-center justify-center p-4 bg-slate-900/60 backdrop-blur-md animate-in fade-in duration-300">
 
-                    <div className="bg-white dark:bg-slate-900 w-full max-w-md rounded-[3rem] p-10 shadow-2xl border border-slate-100 dark:border-slate-800 animate-in zoom-in-95 duration-200">
+            <DeletionModal  showModal={showEmptyTrashModal} setShowModal={setShowEmptyTrashModal}
+                            icon={TrashIcon} action={handleEmptyTrash} description={`Stai per eliminare definitivamente tutte le note presenti nel cestino. Questa azione non può essere annullata in alcun modo.`}
+                            title={'Svuotare il cestino?'}/>
 
-                        <div className="flex flex-col items-center text-center">
-                            {/* Icona Warning Dinamica */}
-                            <div className="w-20 h-20 bg-red-100 dark:bg-red-900/30 rounded-3xl flex items-center justify-center mb-8 animate-pulse">
-                                <TrashIcon className="w-10 h-10 text-red-600" />
-                            </div>
-
-                            <h3 className="text-2xl font-black uppercase tracking-tighter text-slate-900 dark:text-white mb-4">
-                                Svuotare il Cestino?
-                            </h3>
-
-                            <p className="text-slate-500 dark:text-slate-400 mb-10 leading-relaxed font-medium">
-                                Stai per eliminare definitivamente <span className="text-red-600 font-bold">tutte le note</span> presenti nel cestino. Questa azione non può essere annullata in alcun modo.
-                            </p>
-
-                            <div className="flex flex-col w-full gap-4">
-                                <button
-                                    onClick={handleEmptyTrash}
-                                    className="w-full py-5 bg-red-600 hover:bg-red-700 text-white rounded-2xl font-black text-xs uppercase tracking-[0.2em] transition-all shadow-xl shadow-red-600/20 active:scale-95 cursor-pointer"
-                                >
-                                    Sì, elimina tutto per sempre
-                                </button>
-
-                                <button
-                                    onClick={() => setShowEmptyTrashModal(false)}
-                                    className="w-full py-5 bg-slate-100 dark:bg-slate-800 text-slate-500 dark:text-slate-400 rounded-2xl font-black text-xs uppercase tracking-[0.2em] hover:bg-slate-200 dark:hover:bg-slate-700 transition-all cursor-pointer"
-                                >
-                                    Annulla
-                                </button>
-                            </div>
-                        </div>
-                    </div>
-                </div>
-            )}
         </div>
     );
 }

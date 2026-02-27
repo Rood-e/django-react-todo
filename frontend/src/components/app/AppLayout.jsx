@@ -35,7 +35,7 @@ function AppLayout({isDark, setIsDark}) {
 
                 {/* Sezione a destra: In base all'URL capisce cosa inserire */}
                 <main className="flex-1  w-full bg-white dark:bg-slate-900 p-10 shadow-sm overflow-hidden">
-                    <Outlet context={{ appTasks: tasks }}/>
+                    <Outlet context={{ appTasks: tasks, setAppTasks: setTasks }}/>
                 </main>
             </div>
         </div>
