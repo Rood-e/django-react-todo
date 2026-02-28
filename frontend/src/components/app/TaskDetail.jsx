@@ -48,6 +48,23 @@ function TaskDetail() {
     const [loading, setLoading] = useState(!isNew);
     const [isSaving, setIsSaving] = useState(false);
     const [selectedType, setSelectedType] = useState(null);
+    const [categories, setCategories] = useState({});
+
+    useEffect(() => {
+        const fetchCats = async () => {
+            try {
+                const res = await api.get('categories/');
+                const map = {};
+                res.data.forEach(c => map[c.id] = c);
+                setCategories(map);
+            } catch (err) { console.error(err); }
+        };
+        fetchCats();
+    }, []);
+
+    useEffect(() => {
+        console.log(categories);
+    }, [categories]);
 
     useEffect(() => {
         if (!isNew) {
@@ -184,8 +201,28 @@ function TaskDetail() {
     return (
         /* Centratura anche per gli editor se sono brevi */
         <div className={'-mt-4'}>
-            {type === 'note' && <NoteEditor task={task} isNew={isNew} onSave={onSave} onDelete={onDelete} isSaving={isSaving} onRestore={onRestore} />}
-            {type === 'list' && <ChecklistEditor task={task} isNew={isNew} onSave={onSave} onDelete={onDelete} isSaving={isSaving} onRestore={onRestore} />}
+            {type === 'note' && (
+                <NoteEditor
+                    task={task}
+                    categories={categories}
+                    isNew={isNew}
+                    onSave={onSave}
+                    onDelete={onDelete}
+                    isSaving={isSaving}
+                    onRestore={onRestore}
+                />
+            )}
+            {type === 'list' && (
+                <ChecklistEditor
+                    task={task}
+                    categories={categories}
+                    isNew={isNew}
+                    onSave={onSave}
+                    onDelete={onDelete}
+                    isSaving={isSaving}
+                    onRestore={onRestore}
+                />
+            )}
         </div>
     );
 }

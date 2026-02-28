@@ -153,7 +153,7 @@ class Tasks(APIView):
 
     # Aggiungi pk=None anche qui
     def post(self, request, pk=None):
-        serializer = TaskSerializer(data=request.data)
+        serializer = TaskSerializer(data=request.data, context={"request": request})
         if serializer.is_valid():
             task = serializer.save(created_by=request.user)
             return Response({
@@ -179,7 +179,7 @@ class Tasks(APIView):
             return Response({"message": "Task ripristinata"})
 
         # Salvataggio normale
-        serializer = TaskSerializer(task, data=request.data, partial=True)
+        serializer = TaskSerializer(task, data=request.data, partial=True, context={"request": request})
         if serializer.is_valid():
             serializer.save()
             return Response({"message": "Modifiche salvate!"})

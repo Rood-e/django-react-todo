@@ -17,4 +17,5 @@ urlpatterns = [
     path('tasks/<int:pk>/', views.Tasks.as_view(), name='task-detail'),
 
     path('categories/',views.Categories.as_view(),name='categories'),
+    path('categories/<int:pk>/',views.Categories.as_view(),name='categories'),
 ]

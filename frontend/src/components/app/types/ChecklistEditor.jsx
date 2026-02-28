@@ -4,7 +4,7 @@ import {
     CalendarIcon, ChevronDownIcon,
     ArrowLeftIcon, StopIcon, PlayIcon,
     ClockIcon, CheckCircleIcon,
-    CloudArrowDownIcon
+    CloudArrowDownIcon, HashtagIcon
 } from "@heroicons/react/24/outline";
 import { useNavigate } from "react-router-dom";
 import DeletionModal from "../../aesthetic/DeletionModal.jsx";
@@ -16,14 +16,18 @@ const STATUS_OPTIONS = [
     { value: 'completed', label: 'Completata', icon: CheckCircleIcon, color: 'text-green-500', desc: 'Task portata a termine' }
 ];
 
-function ChecklistEditor({ task, isNew, onSave, onDelete, onRestore, isSaving }) {
+function ChecklistEditor({ task, isNew, onSave, onDelete, onRestore, isSaving, categories }) {
     const navigate = useNavigate();
     const statusMenuRef = useRef(null);
+    const catMenuRef = useRef(null);
 
     const [title, setTitle] = useState(task?.title || "");
-    const [dueDate, setDueDate] = useState('');
+    const [dueDate, setDueDate] = useState(task?.due_date || "");
     const [status, setStatus] = useState(task?.status || "tostart");
+    const [selectedCatIds, setSelectedCatIds] = useState(task?.categories ? task.categories.map(id => id.toString()) : []);
+
     const [isStatusOpen, setIsStatusOpen] = useState(false);
+    const [isCatMenuOpen, setIsCatMenuOpen] = useState(false);
     const [showDeleteModal, setShowDeleteModal] = useState(false);
     const [items, setItems] = useState(
         task?.content ? JSON.parse(task.content) : [{ id: Date.now(), text: "", checked: false }]
@@ -34,11 +38,18 @@ function ChecklistEditor({ task, isNew, onSave, onDelete, onRestore, isSaving })
     useEffect(() => {
         function handleClickOutside(event) {
             if (statusMenuRef.current && !statusMenuRef.current.contains(event.target)) setIsStatusOpen(false);
-       }
+            if (catMenuRef.current && !catMenuRef.current.contains(event.target)) setIsCatMenuOpen(false);
+        }
         document.addEventListener("mousedown", handleClickOutside);
         return () => document.removeEventListener("mousedown", handleClickOutside);
     }, []);
 
+    const toggleCategory = (id) => {
+        const stringId = id.toString();
+        setSelectedCatIds(prev =>
+            prev.includes(stringId) ? prev.filter(i => i !== stringId) : [...prev, stringId]
+        );
+    };
 
     const handleInternalSave = async () => {
         if (isArchived) return;
@@ -46,10 +57,11 @@ function ChecklistEditor({ task, isNew, onSave, onDelete, onRestore, isSaving })
         const contentPayload = items.length > 0 ? JSON.stringify(items) : "[]";
 
         await onSave({
-            title: title || "Senza titolo", // Evita titoli nulli
+            title: title || "Senza titolo",
             content: contentPayload,
             due_date: dueDate || null,
-            status: status
+            status: status,
+            categories: selectedCatIds
         });
     };
 
@@ -178,6 +190,47 @@ function ChecklistEditor({ task, isNew, onSave, onDelete, onRestore, isSaving })
                         : 'text-slate-900 dark:text-white placeholder:text-slate-300 dark:placeholder:text-slate-600 focus:placeholder:text-slate-200 dark:focus:placeholder:text-slate-700'
                     }`}
                 />
+
+                {/* AREA CATEGORIE INTEGRATA */}
+                <div className="flex items-center gap-2 mt-4 h-8" ref={catMenuRef}>
+                    {!isArchived && (
+                        <div className="relative">
+                            <button
+                                type="button"
+                                onClick={(e) => { e.stopPropagation(); setIsCatMenuOpen(!isCatMenuOpen); }}
+                                className={`w-7 h-7 flex items-center justify-center rounded-full border-2 border-dashed transition-all cursor-pointer z-20
+                                    ${isCatMenuOpen ? 'border-blue-500 text-blue-500 bg-blue-50' : 'border-slate-200 dark:border-slate-700 text-slate-400 hover:border-blue-500'}`}
+                            >
+                                <HashtagIcon className="w-3.5 h-3.5" />
+                            </button>
+                            {isCatMenuOpen && (
+                                <div className="absolute top-full left-0 mt-3 w-60 bg-white dark:bg-slate-900 border-2 border-slate-900 dark:border-slate-700 rounded-2xl shadow-2xl z-100 py-2 animate-in fade-in slide-in-from-top-2">
+                                    <p className="px-4 py-2 text-[8px] font-black text-slate-400 uppercase tracking-widest">Categorie</p>
+                                    <div className="max-h-48 overflow-y-auto px-2">
+                                        {Object.entries(categories).map(([id, cat]) => (
+                                            <button key={id} onClick={() => toggleCategory(id)} className="w-full flex items-center justify-between px-3 py-2.5 rounded-xl text-[10px] font-black uppercase hover:bg-slate-50 dark:hover:bg-slate-800">
+                                                <div className="flex items-center gap-2">
+                                                    <div className="w-2.5 h-2.5 rounded-full" style={{ backgroundColor: cat.color }} />
+                                                    <span className={selectedCatIds.includes(id.toString()) ? "text-blue-500" : "text-slate-600 dark:text-slate-400"}>{cat.name}</span>
+                                                </div>
+                                                {selectedCatIds.includes(id.toString()) && <CheckCircleIcon className="w-4 h-4 text-blue-500" />}
+                                            </button>
+                                        ))}
+                                    </div>
+                                </div>
+                            )}
+                        </div>
+                    )}
+                    {selectedCatIds.map(id => {
+                        const cat = categories[id];
+                        if (!cat) return null;
+                        return (
+                            <button key={id} onClick={() => !isArchived && toggleCategory(id)} className="px-3 py-1 rounded-full text-[8px] font-black uppercase border-2" style={{ borderColor: cat.color, color: cat.color, backgroundColor: cat.color + '15' }}>
+                                {cat.name}
+                            </button>
+                        );
+                    })}
+                </div>
             </div>
 
             <div className="mt-12 space-y-4 px-4">

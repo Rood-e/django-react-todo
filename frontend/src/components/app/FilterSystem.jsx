@@ -1,10 +1,12 @@
 import { useState, useEffect, useRef } from "react";
 import {
     ArrowsUpDownIcon, CheckIcon, AdjustmentsHorizontalIcon,
-    TagIcon, CalendarIcon, Squares2X2Icon
+    TagIcon, CalendarIcon, Squares2X2Icon, ChevronDownIcon, PencilIcon, TrashIcon
 } from "@heroicons/react/24/outline";
+import api from "../../api.js";
 
-function FilterSystem({ tasks, onFilterChange, showModal, setShowModal, categories }) {
+// Modifica la riga dei parametri della funzione
+function FilterSystem({ tasks, onFilterChange, showModal, setShowModal, categories, setCategories, onEdit }) {
     const [isAdvancedOpen, setIsAdvancedOpen] = useState(false);
     const [selectedStatuses, setSelectedStatuses] = useState([]);
     const [selectedTypes, setSelectedTypes] = useState([]);
@@ -12,6 +14,7 @@ function FilterSystem({ tasks, onFilterChange, showModal, setShowModal, categori
     const [timeframe, setTimeframe] = useState('all');
     const [sortBy, setSortBy] = useState('newest');
     const [isSortOpen, setIsSortOpen] = useState(false);
+    const [openMenuId,setOpenMenuId] = useState(null);
     const sortRef = useRef(null);
 
     const statusLabels = {
@@ -83,6 +86,20 @@ function FilterSystem({ tasks, onFilterChange, showModal, setShowModal, categori
     }, [selectedStatuses, selectedTypes, selectedCategories, timeframe, sortBy, tasks]);
 
     const toggle = (val, state, set) => set(prev => prev.includes(val) ? prev.filter(i => i !== val) : [...prev, val]);
+
+    const internalCategoryDelete = async (id) => {
+        try {
+            await api.delete(`categories/${id}/`);
+
+            setCategories(prev => {
+                const newCats = { ...prev };
+                delete newCats[id];
+                return newCats;
+            });
+        } catch (error) {
+            console.error("Errore eliminazione:", error.response?.data || error.message);
+        }
+    };
 
     return (
         <div className="w-full mb-10 space-y-4">
@@ -223,17 +240,55 @@ function FilterSystem({ tasks, onFilterChange, showModal, setShowModal, categori
                         <div className="flex flex-wrap gap-2">
                             {Object.entries(categories).map(([id, cat]) => {
                                 const isSelected = selectedCategories.includes(id);
+
                                 return (
-                                    <button key={id}    onClick={() => toggle(id, selectedCategories, setSelectedCategories)}
-                                        className={`px-3 py-1.5 rounded-lg text-[9px] font-black uppercase border-2 transition-all flex items-center gap-2 hover:brightness-140
-                                            ${!isSelected ? 'border-slate-200 dark:border-slate-800  text-slate-400' : ''}`}
-                                        style={{
-                                            borderColor: cat.color,
-                                            backgroundColor: isSelected ? cat.color + "35" : '',
-                                            color: cat.color,
-                                        }}>
-                                        {cat.name}
-                                    </button>
+                                    <div key={id}
+                                        className="relative group flex items-center"
+                                        onMouseLeave={() => setOpenMenuId(null)}>
+                                        <div style={{
+                                                borderColor: cat.color,
+                                                backgroundColor: isSelected ? cat.color + "35" : '',
+                                                color: cat.color,
+                                            }}
+                                            className={`px-3 py-1.5 rounded-lg font-black border-2 transition-all flex items-center gap-2 
+                                                    ${!isSelected ? 'border-slate-200 dark:border-slate-800 text-slate-400' : ''}`}>
+                                            <button className="text-[9px] uppercase hover:brightness-125"
+                                                    onClick={() => toggle(id, selectedCategories, setSelectedCategories)}>
+                                                {cat.name}
+                                            </button>
+
+                                            <div className="relative">
+                                                <ChevronDownIcon
+                                                    onClick={(e) => {
+                                                        e.stopPropagation();
+                                                        setOpenMenuId(openMenuId === id ? null : id);
+                                                    }}
+                                                    strokeWidth={5}
+                                                    className="w-2.5 hidden group-hover:block hover:brightness-150 cursor-pointer transition-all"
+                                                />
+
+                                                {openMenuId === id && (
+                                                    <div className="absolute top-full right-0 mt-2 w-32 bg-white dark:bg-slate-900 border-2 border-slate-900 dark:border-slate-700 rounded-xl shadow-xl z-[60] py-1 overflow-hidden animate-in fade-in slide-in-from-top-1">
+                                                        <button
+                                                            onClick={(e) => {
+                                                                e.stopPropagation(); onEdit(id);
+                                                                setOpenMenuId(null);
+                                                            }}
+                                                            className="w-full px-3 py-2 text-left text-[9px] font-black uppercase hover:bg-slate-100 dark:hover:bg-slate-800 flex items-center gap-2"
+                                                        >
+                                                            <PencilIcon className="w-3 h-3"/> Modifica
+                                                        </button>
+                                                        <button
+                                                            onClick={(e) => { e.stopPropagation(); internalCategoryDelete(id); }}
+                                                            className="w-full px-3 py-2 text-left text-[9px] font-black uppercase text-red-500 hover:bg-red-50 dark:hover:bg-red-950/30 flex items-center gap-2"
+                                                        >
+                                                            <TrashIcon className="w-3 h-3"/> Elimina
+                                                        </button>
+                                                    </div>
+                                                )}
+                                            </div>
+                                        </div>
+                                    </div>
                                 );
                             })}
                         </div>

@@ -11,22 +11,26 @@ import {
 } from "@heroicons/react/24/outline";
 import DeletionModal from "../../aesthetic/DeletionModal.jsx";
 
-function NoteEditor({ task, isNew, onSave, onDelete, onRestore, isSaving }) {
+function NoteEditor({ task, isNew, onSave, onDelete, onRestore, isSaving, categories }) {
     const navigate = useNavigate();
     const statusMenuRef = useRef(null);
     const dateMenuRef = useRef(null);
+    const catMenuRef = useRef(null);
 
     const [title, setTitle] = useState("");
     const [dueDate, setDueDate] = useState('');
     const [status, setStatus] = useState("pending");
+    const [selectedCatIds, setSelectedCatIds] = useState([]);
+
     const [showToolbar, setShowToolbar] = useState(true);
     const [isStatusOpen, setIsStatusOpen] = useState(false);
+    const [isCatMenuOpen, setIsCatMenuOpen] = useState(false);
     const [showDeleteModal, setShowDeleteModal] = useState(false);
 
     const isArchived = task?.is_active === false;
 
     const editor = useEditor({
-        editable: !isArchived, // Disabilita editing se archiviata
+        editable: !isArchived,
         extensions: [
             StarterKit.configure({
                 heading: { levels: [1, 2] },
@@ -45,7 +49,7 @@ function NoteEditor({ task, isNew, onSave, onDelete, onRestore, isSaving }) {
     useEffect(() => {
         function handleClickOutside(event) {
             if (statusMenuRef.current && !statusMenuRef.current.contains(event.target)) setIsStatusOpen(false);
-            if (dateMenuRef.current && !dateMenuRef.current.contains(event.target)) setIsDateOpen(false);
+            if (catMenuRef.current && !catMenuRef.current.contains(event.target)) setIsCatMenuOpen(false);
         }
         document.addEventListener("mousedown", handleClickOutside);
         return () => document.removeEventListener("mousedown", handleClickOutside);
@@ -55,6 +59,8 @@ function NoteEditor({ task, isNew, onSave, onDelete, onRestore, isSaving }) {
         if (task) {
             setTitle(task.title || "");
             setStatus(task.status || "pending");
+            setDueDate(task.due_date || "");
+            setSelectedCatIds(task.categories ? task.categories.map(id => id.toString()) : []);
             if (editor && task.content !== editor.getHTML()) {
                 editor.commands.setContent(task.content || "");
             }
@@ -70,9 +76,21 @@ function NoteEditor({ task, isNew, onSave, onDelete, onRestore, isSaving }) {
 
     const currentStatus = STATUS_OPTIONS.find(opt => opt.value === status) || STATUS_OPTIONS[0];
 
+    const toggleCategory = (id) => {
+        setSelectedCatIds(prev =>
+            prev.includes(id) ? prev.filter(i => i !== id) : [...prev, id]
+        );
+    };
+
     const handleInternalSave = async () => {
         if (!editor || isArchived) return;
-        await onSave({ title, content: editor.getHTML(), due_date: dueDate || null, status });
+        await onSave({
+            title,
+            content: editor.getHTML(),
+            due_date: dueDate || null,
+            status,
+            categories: selectedCatIds
+        });
     };
 
     const handleInternalDelete = async () => {
@@ -118,12 +136,69 @@ function NoteEditor({ task, isNew, onSave, onDelete, onRestore, isSaving }) {
                         <button onClick={() => navigate(-1)} className="p-3 hover:bg-slate-100 dark:hover:bg-slate-800 rounded-2xl text-slate-400 cursor-pointer">
                             <ArrowLeftIcon className="w-6 h-6" />
                         </button>
-                        <input
-                            type="text" value={title} onChange={(e) => setTitle(e.target.value)}
-                            disabled={isArchived}
-                            placeholder="Titolo Documento..."
-                            className="bg-transparent text-3xl font-black outline-none text-slate-900 dark:text-white w-full tracking-tighter disabled:cursor-not-allowed"
-                        />
+
+                        <div className="flex flex-col flex-1">
+                            <input
+                                type="text" value={title} onChange={(e) => setTitle(e.target.value)}
+                                disabled={isArchived}
+                                placeholder="Titolo Documento..."
+                                className="bg-transparent text-3xl font-black outline-none text-slate-900 dark:text-white w-full tracking-tighter"
+                            />
+
+                            {/* AREA CATEGORIE */}
+                            <div className="flex items-center gap-2 mt-3 h-8" ref={catMenuRef}>
+                                {!isArchived && (
+                                    <div className="relative">
+                                        <button
+                                            type="button"
+                                            onClick={(e) => {
+                                                e.stopPropagation();
+                                                setIsCatMenuOpen(!isCatMenuOpen);
+                                            }}
+                                            className={`w-7 h-7 flex items-center justify-center rounded-full border-2 border-dashed transition-all cursor-pointer z-20
+                                                ${isCatMenuOpen ? 'border-blue-500 text-blue-500 bg-blue-50 dark:bg-blue-900/20' : 'border-slate-200 dark:border-slate-700 text-slate-400 hover:border-blue-500 hover:text-blue-500'}`}
+                                        >
+                                            <HashtagIcon className="w-3.5 h-3.5" />
+                                        </button>
+
+                                        {isCatMenuOpen && (
+                                            <div className="absolute top-full left-0 mt-3 w-60 bg-white dark:bg-slate-900 border-2 border-slate-900 dark:border-slate-700 rounded-2xl shadow-2xl z-100 py-2 animate-in fade-in slide-in-from-top-2">
+                                                <p className="px-4 py-2 text-[8px] font-black text-slate-400 uppercase tracking-widest">Seleziona Categorie</p>
+                                                <div className="max-h-48 overflow-y-auto px-2 custom-scrollbar">
+                                                    {Object.entries(categories).map(([id, cat]) => (
+                                                        <button
+                                                            key={id}
+                                                            onClick={() => toggleCategory(id)}
+                                                            className="w-full flex items-center justify-between px-3 py-2.5 rounded-xl text-[10px] font-black uppercase hover:bg-slate-50 dark:hover:bg-slate-800 transition-colors"
+                                                        >
+                                                            <div className="flex items-center gap-2">
+                                                                <div className="w-2.5 h-2.5 rounded-full" style={{ backgroundColor: cat.color }} />
+                                                                <span className={selectedCatIds.includes(id.toString()) ? "text-blue-500" : "text-slate-600 dark:text-slate-400"}>{cat.name}</span>
+                                                            </div>
+                                                            {selectedCatIds.includes(id.toString()) && <CheckCircleIcon className="w-4 h-4 text-blue-500" />}
+                                                        </button>
+                                                    ))}
+                                                </div>
+                                            </div>
+                                        )}
+                                    </div>
+                                )}
+                                {selectedCatIds.map(id => {
+                                    const cat = categories[id];
+                                    if (!cat) return null;
+                                    return (
+                                        <button
+                                            key={id}
+                                            onClick={() => toggleCategory(id)}
+                                            className="px-3 py-1 rounded-full text-[8px] font-black uppercase border-2 transition-all hover:brightness-110 active:scale-95"
+                                            style={{ borderColor: cat.color, color: cat.color, backgroundColor: cat.color + '15' }}
+                                        >
+                                            {cat.name}
+                                        </button>
+                                    );
+                                })}
+                            </div>
+                        </div>
                     </div>
 
                     <div className="flex items-center gap-6" ref={statusMenuRef}>

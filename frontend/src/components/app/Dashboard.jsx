@@ -38,10 +38,16 @@ function Dashboard({ isTrashView = false }) {
     const [stats, setStats] = useState({ total: 0, completed: 0, pending: 0 });
     const [loading, setLoading] = useState(true);
     const [showEmptyTrashModal, setShowEmptyTrashModal] = useState(false);
+
     const [showCategoryCreationModal, setshowCategoryCreationModal] = useState(false);
+    const [editingCategory, setEditingCategory] = useState(null);
+
+    const handleEditCategory = (id) => {
+        setEditingCategory({ id, ...categoriesMap[id] });
+        setshowCategoryCreationModal(true);
+    };
 
     useEffect(() => {
-        console.log(appTasks);
         const initDashboard = () => {
             if (!appTasks) return;
 
@@ -103,17 +109,26 @@ function Dashboard({ isTrashView = false }) {
         }
     };
 
-    const onSave = async (payload) => {
+    const onSaveCategory = async (payload) => {
         try {
-            const res = await api.post("categories/", { ...payload });
-
-            setCategoriesMap(prev => ({
-                ...prev,
-                [res.data.id] : {
-                    name: res.data.name,
-                    color: res.data.color,
-                },
-            }));
+            if (payload.id) {
+                // UPDATE
+                await api.put(`categories/${payload.id}/`, payload);
+                setCategoriesMap(prev => ({
+                    ...prev,
+                    [payload.id]: { name: payload.name, color: payload.color }
+                }));
+            } else {
+                // CREATE
+                const res = await api.post("categories/", payload);
+                setCategoriesMap(prev => ({
+                    ...prev,
+                    [res.data.id]: { name: res.data.name, color: res.data.color }
+                }));
+            }
+            setEditingCategory(null);
+        } catch (err) {
+            console.error(err);
         } finally {
             setshowCategoryCreationModal(false);
         }
@@ -175,6 +190,8 @@ function Dashboard({ isTrashView = false }) {
                         showModal={showCategoryCreationModal}
                         setShowModal={setshowCategoryCreationModal}
                         categories={categoriesMap}
+                        setCategories={setCategoriesMap}
+                        onEdit={handleEditCategory}
                     />
                 )}
 
@@ -210,7 +227,15 @@ function Dashboard({ isTrashView = false }) {
                             icon={TrashIcon} action={handleEmptyTrash} description={`Stai per eliminare definitivamente tutte le note presenti nel cestino. Questa azione non può essere annullata in alcun modo.`}
                             title={'Svuotare il cestino?'}/>
 
-            <CreationModal  showModal={showCategoryCreationModal} setShowModal={setshowCategoryCreationModal} onSave={onSave}/>
+            <CreationModal
+                showModal={showCategoryCreationModal}
+                setShowModal={(val) => {
+                    setshowCategoryCreationModal(val);
+                    if(!val) setEditingCategory(null); // Resetta se chiudi il modale
+                }}
+                onSave={onSaveCategory}
+                editingCategory={editingCategory}
+            />
         </div>
     );
 }
