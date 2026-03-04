@@ -15,6 +15,7 @@ import Error401 from "./components/Error401.jsx";
 import AppLayout from './components/app/AppLayout.jsx';
 import Dashboard from "./components/app/Dashboard.jsx";
 import TaskDetail from "./components/app/TaskDetail.jsx";
+import AppCalendar from "./components/app/types/AppCalendar.jsx";
 
 import {Toaster} from "react-hot-toast";
 import {CheckCircleIcon, XCircleIcon} from "@heroicons/react/24/outline";
@@ -110,7 +111,7 @@ function App() {
                     <Route path="account" element={<Settings />} />
 
                     {/* Futura rotta Calendario */}
-                    {/* <Route path="calendar" element={<Calendar />} /> */}
+                     <Route path="calendar" element={<AppCalendar />} />
                 </Route>
 
                 {/* Catch-all 404 */}
