@@ -3,6 +3,7 @@ import dayGridPlugin from '@fullcalendar/daygrid';
 import itLocale from '@fullcalendar/core/locales/it';
 import {useEffect, useRef, useState} from "react";
 import api from "../../../api.js";
+import {useNavigate} from "react-router-dom";
 
 const getItalianHolidays = (year) => {
     const a = year % 19, b = Math.floor(year / 100), c = year % 100;
@@ -28,7 +29,9 @@ const getItalianHolidays = (year) => {
         { title: "Natale", start: `${year}-12-25` },
         { title: "St. Stefano", start: `${year}-12-26` },
         { title: "Pasqua", start: easter.toISOString().split('T')[0] },
-        { title: "Lunedì dell'Angelo", start: easterMonday.toISOString().split('T')[0] }
+        { title: "Lunedì dell'Angelo", start: easterMonday.toISOString().split('T')[0] },
+        { title: "Capodanno", start: `${year+1}-01-01` },
+        { title: "Epifania", start: `${year+1}-01-06` },
     ];
 
     return fixedHolidays.map(h => ({
@@ -44,38 +47,55 @@ const getItalianHolidays = (year) => {
 
 function AppCalendar() {
     const [tasks, setTasks] = useState([]);
-    const currentYear = new Date().getFullYear();
+    const [holidays, setHolidays] = useState([]);
+    const lastYearRef = useRef(null);
+    const navigate = useNavigate();
 
     useEffect(() => {
         const fetchTasks = async () => {
             try {
                 const resp = await api.get('/tasks/');
+                const STATUS_COLORS = {
+                    'completed': '#22c55e', // Verde
+                    'progress': '#3b82f6',  // Blu
+                    'pending': '#f59e0b',   // Giallo/Arancio
+                    'tostart': '#94a3b8'    // Slate neutro
+                };
 
                 const taskEvents = resp.data
-                    .filter(task => task.due_date)
+                    .filter(task => task.due_date && task.is_active === true)
                     .map(task => ({
                         id: task.id,
                         title: task.title || "Senza titolo",
                         start: task.due_date,
-                        backgroundColor: task.status === 'completed' ? '#22c55e' : '#3b82f6',
+                        backgroundColor: STATUS_COLORS[task.status] || STATUS_COLORS['tostart'],
                         borderColor: 'transparent',
                         extendedProps: { ...task },
-                        display: 'block'
+                        display: 'list-item',
                     }));
-
-                const holidays = getItalianHolidays(currentYear);
-
-                setTasks([...taskEvents, ...holidays]);
+                setTasks(taskEvents);
             } catch (error) {
-                setTasks(getItalianHolidays(currentYear));
+                console.error("Errore task:", error);
             }
         };
         fetchTasks();
-    }, [currentYear]);
+    }, []);
 
-    useEffect(() => {
-        console.log(tasks);
-    }, [tasks])
+    const handleDatesSet = (dateInfo) => {
+        // Estrazione dell'anno dal calendario
+        const displayedYear = dateInfo.view.currentStart.getFullYear();
+
+        // Se è diverso da quello memorizzato, ricalcola
+        if (lastYearRef.current !== displayedYear) {
+            lastYearRef.current = displayedYear;
+            setHolidays(getItalianHolidays(displayedYear));
+        }
+    };
+
+    const handleEventClick = (e) => {
+        if (e.event.display === 'background') return;
+        navigate('/app/task/' + e.event.id,);
+    }
 
     return (
         <div className="h-screen w-full -mt-7 bg-white dark:bg-slate-900 flex flex-col overflow-hidden">
@@ -163,7 +183,9 @@ function AppCalendar() {
                             right: 'dayGridMonth,dayGridWeek'
                         }}
                         height="100%"
-                        events={tasks}
+                        datesSet={handleDatesSet}
+                        events={[...tasks,...holidays]}
+                        eventClick={handleEventClick}
                     />
                 </div>
             </div>
