@@ -1,6 +1,3 @@
-/*@theme {
-  Variabili
-}*/
 @import "tailwindcss";
 
 @layer base {
@@ -12,139 +9,110 @@
   }
 }
 
-/* Forza Tailwind a riconoscere la classe .dark sulla root */
 @custom-variant dark (&:where(.dark, .dark *));
 
+/* --- Animazioni Generali --- */
+@keyframes borderDraw { from { stroke-dashoffset: 1; } to { stroke-dashoffset: 0; } }
+@keyframes shake { 0%, 100% { transform: translateX(0); } 25% { transform: translateX(-4px); } 75% { transform: translateX(4px); } }
+@keyframes enter { from { transform: translateX(100%); opacity: 0; } to { transform: translateX(0); opacity: 1; } }
+@keyframes leave { from { transform: translateX(0); opacity: 1; } to { transform: translateX(100%); opacity: 0; } }
 
-@keyframes borderDraw {
-  from {
-    stroke-dashoffset: 1; /* Scomparso */
-  }
-  to {
-    stroke-dashoffset: 0; /* Completato */
-  }
+.animate-border-draw { animation: borderDraw 5000ms linear forwards; }
+.animate-shake { animation: shake 0.2s ease-in-out 0s 2; }
+.animate-enter { animation: enter 0.3s ease-out forwards; }
+.animate-leave { animation: leave 0.3s ease-in forwards; }
+
+/* --- Scrollbar --- */
+::-webkit-scrollbar { width: 5px; }
+::-webkit-scrollbar-track { background: transparent; }
+::-webkit-scrollbar-thumb { background: #8f8f8f; border-radius: 10px; }
+::-webkit-scrollbar-thumb:hover { background: #686767; }
+
+/* --- FullCalendar Core Reset --- */
+/* --- GRIGLIA E STRUTTURA --- */
+.fc-theme-standard .fc-scrollgrid {
+  border: 1px solid #f1f5f9 !important;
+  table-layout: fixed !important; /* Forza caselle uguali */
+}
+.dark .fc-theme-standard .fc-scrollgrid { border-color: #1e293b !important; }
+
+/* --- FESTIVITÀ (BACKGROUND) --- */
+.fc-daygrid-bg-harness {
+  display: block !important;
+  visibility: visible !important;
+  z-index: 1 !important;
 }
 
-.animate-border-draw {
-  animation: borderDraw 5000ms linear forwards;
+.holiday-event {
+  background-color: rgba(239, 68, 68, 0.12) !important;
+  border: none !important;
 }
 
-
-/* Scrollbar */
-
-/* width */
-::-webkit-scrollbar {
-  width: 5px;
+/* --- TASK E ALLINEAMENTO --- */
+.fc-daygrid-day-events {
+  margin-top: 32px !important; /* Spazio sotto il numero del giorno */
+  display: flex !important;
+  flex-direction: column !important;
+  gap: 2px !important;
+  padding: 0 4px !important;
 }
 
-/* Track */
-::-webkit-scrollbar-track {
-  box-shadow: inset 0 0 5px transparent;
-  border-radius: 10px;
+.fc-daygrid-event-harness {
+  margin: 0 !important;
+  z-index: 2 !important;
 }
 
-/* Handle */
-::-webkit-scrollbar-thumb {
-  background: #8f8f8f;
-  border-radius: 10px;
-}
-
-/* Handle on hover */
-::-webkit-scrollbar-thumb:hover {
-  background: #686767;
-}
-
-/* Animazione Input Form */
-@keyframes shake {
-  0%, 100% { transform: translateX(0); }
-  25% { transform: translateX(-4px); }
-  75% { transform: translateX(4px); }
-}
-
-.animate-shake {
-  animation: shake 0.2s ease-in-out 0s 2;
-}
-
-@keyframes progress {
-  from { width: 100%; }
-  to { width: 0; }
-}
-
-@keyframes enter {
-  from { transform: translateX(100%); opacity: 0; }
-  to { transform: translateX(0); opacity: 1; }
-}
-
-@keyframes leave {
-  from { transform: translateX(0); opacity: 1; }
-  to { transform: translateX(100%); opacity: 0; }
-}
-
-.animate-enter {
-  animation: enter 0.3s ease-out forwards;
-}
-
-.animate-leave {
-  animation: leave 0.3s ease-in forwards;
-}
-
-:root{
-  --fc-event-bg-color: #3b82f6;
-}
-
-/* Rendi il pallino del list-item visibile e usa il backgroundColor dell'evento */
-.fc-daygrid-event.fc-event-display-list-item {
-  padding-left: 2px;
-}
-
-.fc-daygrid-event-dot {
-  /* Forza il colore del pallino usando la proprietà backgroundColor dell'evento */
-  border-color: var(--fc-event-bg-color) !important;
-  border-width: 5px !important; /* Dimensione del pallino */
-  border-radius: 50%;
-}
-
-/* Stile del testo accanto al pallino */
-.fc-event-title {
-  font-weight: 700 !important;
-  font-size: 0.75rem !important;
-  color: #475569 !important; /* Slate 600 */
-  margin-left: 4px;
-}
-
-.dark .fc-event-title {
-  color: #cbd5e1 !important; /* Slate 300 */
-}
-
-/* Rimuovi l'hover standard che copre tutto */
-.fc-daygrid-event:hover {
-  background: transparent !important;
-}
-
-/* Transizione fluida per l'hover */
 .fc-daygrid-event {
-  transition: all 0.2s ease-in-out !important;
-  cursor: pointer !important;
+  background: transparent !important;
+  border: none !important;
+  padding: 0 !important;
+  border-radius: 6px !important;
+  transition: background 0.2s ease !important;
 }
 
-/* Effetto al passaggio del mouse */
+/* Hover visibile sia in Light che Dark mode */
 .fc-daygrid-event:hover {
-  transform: translateX(4px); /* Leggero spostamento a destra */
-  background: rgba(0, 0, 0, 0.03) !important; /* Feedback visivo dell'area */
-  border-radius: 6px;
+  background: rgba(15, 23, 42, 0.05) !important; /* Grigio leggero in light */
 }
-
 .dark .fc-daygrid-event:hover {
-  background: rgba(255, 255, 255, 0.05) !important;
+  background: rgba(255, 255, 255, 0.08) !important; /* Bianco leggero in dark */
 }
 
-/* Enfatizza il pallino all'hover */
-.fc-daygrid-event:hover .fc-daygrid-event-dot {
-  transform: scale(1.3);
-  box-shadow: 0 0 8px var(--fc-event-bg-color);
+/* --- NUMERI GIORNI --- */
+.fc-daygrid-day-top {
+  position: absolute !important;
+  top: 0;
+  right: 0;
+  z-index: 3;
 }
 
-/* Enfatizza il testo all'hover */
-.fc-daygrid-event:hover .fc-event-title {
-  color: var(--fc-event-bg-color) !important; /* Il testo prende il colore dello stato */
+.fc-daygrid-day-number {
+  padding: 8px 12px !important;
+  font-weight: 800 !important;
+  color: #94a3b8;
+  font-size: 0.85rem;
+}
+
+/* Stile per il bottone Nuova Task */
+.fc .fc-nuovaTask-button {
+  background-color: #3b82f6 !important; /* Blu */
+  border-color: #3b82f6 !important;
+  color: white !important;
+  font-weight: 800 !important;
+  text-transform: uppercase;
+  font-size: 0.65rem !important;
+  padding: 8px 14px !important;
+  border-radius: 10px !important;
+  transition: all 0.2s ease;
+  margin-left: 8px !important; /* Distanza da 'today' */
+}
+
+.fc .fc-nuovaTask-button:hover {
+  background-color: #2563eb !important;
+  transform: translateY(-1px);
+  box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1);
+}
+
+.fc .fc-nuovaTask-button:active {
+  transform: translateY(0);
 }
