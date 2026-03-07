@@ -1,13 +1,12 @@
 import {ArrowPathIcon, DocumentTextIcon, ListBulletIcon, TrashIcon, CalendarIcon} from "@heroicons/react/24/outline";
-import {Link} from "react-router-dom";
 
-function TaskCard({ task, isTrashView, categoriesMap }) {
+function TaskCard({ task, isTrashView, categoriesMap, handleTaskClick }) {
     // Calcolo per il colore della scadenza
     const isOverdue = task.due_date && new Date(task.due_date) < new Date().setHours(0,0,0,0);
     const hasDueDate = !!task.due_date;
 
     return (
-        <Link to={`/app/task/${task.id}`} key={task.id} className="block group">
+        <div onClick={() => handleTaskClick(task)} className="cursor-pointer block group">
             <div className="p-5 bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-3xl flex items-center justify-between transition-all duration-300 shadow-sm hover:shadow-xl hover:shadow-blue-500/10 hover:-translate-y-1 border-b-4 hover:border-blue-500">
                 <div className="flex items-center gap-4">
                     <div className={`p-2 rounded-xl ${isTrashView ? 'bg-red-50 dark:bg-red-900/20' : 'bg-blue-50 dark:bg-blue-900/20'}`}>
@@ -16,7 +15,9 @@ function TaskCard({ task, isTrashView, categoriesMap }) {
                         ) : (
                             task.type === 'note' ?
                                 <DocumentTextIcon className="w-5 h-5 text-blue-500" /> :
-                                <ListBulletIcon className="w-5 h-5 text-blue-500"/>
+                            task.type === 'checklist' ?
+                                <ListBulletIcon className="w-5 h-5 text-blue-500"/>:
+                                <CalendarIcon className="w-5 h-5 text-blue-500"/>
                         )}
                     </div>
                     <div>
@@ -96,7 +97,7 @@ function TaskCard({ task, isTrashView, categoriesMap }) {
                     </span>
                 </div>
             </div>
-        </Link>
+        </div>
     )
 }
 

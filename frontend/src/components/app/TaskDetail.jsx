@@ -62,9 +62,9 @@ function TaskDetail() {
         fetchCats();
     }, []);
 
-    useEffect(() => {
+    /*useEffect(() => {
         console.log(categories);
-    }, [categories]);
+    }, [categories]);*/
 
     useEffect(() => {
         if (!isNew) {

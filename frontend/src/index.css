@@ -28,91 +28,120 @@
 ::-webkit-scrollbar-thumb { background: #8f8f8f; border-radius: 10px; }
 ::-webkit-scrollbar-thumb:hover { background: #686767; }
 
-/* --- FullCalendar Core Reset --- */
-/* --- GRIGLIA E STRUTTURA --- */
-.fc-theme-standard .fc-scrollgrid {
+/* --- FULLCALENDAR: STRUTTURA E FIX RESIZE --- */
+/* Fix Sidebar: Forza le tabelle interne a scalare correttamente */
+.fc-scrollgrid,
+.fc-daygrid-body,
+.fc-multimonth-daygrid-table,
+.fc-col-header,
+.fc-scrollgrid-sync-table,
+.fc-daygrid-body table {
+  width: 100% !important;
+  table-layout: fixed !important;
+}
+
+/* Griglia e Bordi */
+.fc-theme-standard .fc-scrollgrid { border: none !important; }
+.fc-theme-standard td,
+.fc-theme-standard th {
   border: 1px solid #f1f5f9 !important;
-  table-layout: fixed !important; /* Forza caselle uguali */
 }
-.dark .fc-theme-standard .fc-scrollgrid { border-color: #1e293b !important; }
-
-/* --- FESTIVITÀ (BACKGROUND) --- */
-.fc-daygrid-bg-harness {
-  display: block !important;
-  visibility: visible !important;
-  z-index: 1 !important;
+.dark .fc-theme-standard td,
+.dark .fc-theme-standard th {
+  border: 1px solid #1e293b !important;
 }
 
-.holiday-event {
-  background-color: rgba(239, 68, 68, 0.12) !important;
+/* --- TOOLBAR (HEADER) --- */
+.fc .fc-toolbar-title {
+  text-transform: capitalize !important;
+  font-weight: 900;
+  font-size: 2rem;
+  letter-spacing: -0.04em;
+  color: #1e293b;
+}
+
+.dark .fc .fc-toolbar-title { color: white; }
+
+/* Bottoni Standard */
+.fc .fc-button-primary {
+  background: transparent !important;
+  border: 2px solid #e2e8f0 !important;
+  color: #64748b !important;
+  font-weight: 800;
+  text-transform: uppercase;
+  font-size: 0.7rem;
+  border-radius: 12px !important;
+  padding: 8px 16px !important;
+  transition: all 0.2s ease;
+}
+.dark .fc .fc-button-primary { border-color: #1e293b !important; }
+
+.fc .fc-button-primary:hover {
+  background: #f8fafc !important;
+  border-color: #cbd5e1 !important;
+}
+
+.fc .fc-button-active {
+  background: #0f172a !important;
+  color: white !important;
+  border-color: #0f172a !important;
+}
+
+/* Bottone Nuova Task (Stile Custom) */
+.fc .fc-nuovaTask-button {
+  background: #3b82f6 !important;
   border: none !important;
+  color: white !important;
+  margin-left: 12px !important;
+  box-shadow: 0 4px 6px -1px rgba(59, 130, 246, 0.2);
 }
 
-/* --- TASK E ALLINEAMENTO --- */
+.fc .fc-nuovaTask-button:hover {
+  background: #2563eb !important;
+  transform: translateY(-1px);
+}
+
+/* --- CELLE E GIORNI --- */
+.fc-daygrid-day-top {
+  flex-direction: row !important; /* Allinea numero a destra */
+}
+
+.fc-daygrid-day-number {
+  padding: 12px !important;
+  font-weight: 800;
+  font-size: 0.9rem;
+  color: #94a3b8;
+  width: 100%;
+  text-align: right;
+}
+
+/* Festività (Background) */
+.fc-daygrid-bg-harness { z-index: 1 !important; }
+.holiday-event {
+  background-color: rgba(239, 68, 68, 0.08) !important;
+}
+
+/* --- EVENTI (TASK) --- */
 .fc-daygrid-day-events {
-  margin-top: 32px !important; /* Spazio sotto il numero del giorno */
   display: flex !important;
   flex-direction: column !important;
-  gap: 2px !important;
-  padding: 0 4px !important;
+  gap: 3px !important;
 }
 
-.fc-daygrid-event-harness {
-  margin: 0 !important;
-  z-index: 2 !important;
-}
+.fc-daygrid-event-harness { z-index: 2 !important; }
 
 .fc-daygrid-event {
   background: transparent !important;
   border: none !important;
   padding: 0 !important;
-  border-radius: 6px !important;
-  transition: background 0.2s ease !important;
+  border-radius: 8px !important;
 }
 
-/* Hover visibile sia in Light che Dark mode */
 .fc-daygrid-event:hover {
-  background: rgba(15, 23, 42, 0.05) !important; /* Grigio leggero in light */
+  background: rgba(0, 0, 0, 0.03) !important;
 }
 .dark .fc-daygrid-event:hover {
-  background: rgba(255, 255, 255, 0.08) !important; /* Bianco leggero in dark */
+  background: rgba(255, 255, 255, 0.05) !important;
 }
 
-/* --- NUMERI GIORNI --- */
-.fc-daygrid-day-top {
-  position: absolute !important;
-  top: 0;
-  right: 0;
-  z-index: 3;
-}
-
-.fc-daygrid-day-number {
-  padding: 8px 12px !important;
-  font-weight: 800 !important;
-  color: #94a3b8;
-  font-size: 0.85rem;
-}
-
-/* Stile per il bottone Nuova Task */
-.fc .fc-nuovaTask-button {
-  background-color: #3b82f6 !important; /* Blu */
-  border-color: #3b82f6 !important;
-  color: white !important;
-  font-weight: 800 !important;
-  text-transform: uppercase;
-  font-size: 0.65rem !important;
-  padding: 8px 14px !important;
-  border-radius: 10px !important;
-  transition: all 0.2s ease;
-  margin-left: 8px !important; /* Distanza da 'today' */
-}
-
-.fc .fc-nuovaTask-button:hover {
-  background-color: #2563eb !important;
-  transform: translateY(-1px);
-  box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1);
-}
-
-.fc .fc-nuovaTask-button:active {
-  transform: translateY(0);
-}
+.fc-daygrid-event-dot { display: none !important; }

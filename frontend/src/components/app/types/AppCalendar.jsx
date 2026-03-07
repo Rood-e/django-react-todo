@@ -5,6 +5,7 @@ import {useEffect, useRef, useState} from "react";
 import api from "../../../api.js";
 import {useNavigate} from "react-router-dom";
 import {XMarkIcon, DocumentTextIcon, ListBulletIcon, CheckCircleIcon, PlayIcon, StopIcon, ClockIcon} from "@heroicons/react/24/outline";
+import EventModal from "../../aesthetic/EventModal.jsx";
 
 // Helper Colori e Status (Coerenti con le tue altre pagine)
 const STATUS_OPTIONS = [
@@ -61,11 +62,7 @@ const getItalianHolidays = (year) => {
 
 
 /*
-    TODO: Mettere a posto calendario (quando si apre la sidebar si bugga e le colonne non cambiano dimensione)\
-          quando si salva un evento non viene visualizzato subito
-          visualizzazione dei dettagli degli eventi nella dashboard
-          gestione rimozione dal cestino degli eventi
-          aggiungere ai filtri gli eventi
+    TODO: aggiungere ai filtri gli eventi
 */
 
 function AppCalendar() {
@@ -147,7 +144,7 @@ function AppCalendar() {
         try {
             const data = { ...taskForm, type:'event', is_active: true };
             const resp = editingTaskId
-                ? await api.patch(`/tasks/${editingTaskId}/`, data)
+                ? await api.put(`/tasks/${editingTaskId}/`, data)
                 : await api.post('/tasks/', data);
 
             const calendarApi = calendarRef.current.getApi();
@@ -164,10 +161,22 @@ function AppCalendar() {
                     title: resp.data.title,
                     start: resp.data.due_date,
                     backgroundColor: getColorByStatus(resp.data.status),
-                    extendedProps: { ...resp.data },
                     display: 'list-item'
                 });
             }
+
+            // 3. SINCRONIZZAZIONE STATO REACT (Opzionale ma consigliata)
+            // Aggiorna lo stato locale così se cambi vista e torni indietro i dati ci sono
+            if (!editingTaskId) {
+                setTasks(prev => [...prev, {
+                    id: resp.data.id,
+                    title: taskForm.title,
+                    start: taskForm.due_date,
+                    backgroundColor: getColorByStatus(taskForm.status),
+                    display: 'list-item'
+                }]);
+            }
+
             setIsModalOpen(false);
             resetForm();
         } catch (error) { console.error(error); }
@@ -197,19 +206,6 @@ function AppCalendar() {
 
     return (
         <div className="h-screen w-full -mt-7 bg-white dark:bg-slate-900 flex flex-col overflow-hidden">
-            <style>{`
-                .fc { display: flex !important; flex-direction: column !important; width: 100% !important; height: 100% !important; }
-                .fc-scrollgrid, .fc-daygrid-body, .fc-col-header { width: 100% !important; }
-                .fc .fc-toolbar-title { text-transform: capitalize !important; font-weight: 900; font-size: 2rem; letter-spacing: -0.04em; color: #1e293b; }
-                .dark .fc .fc-toolbar-title { color: white; }
-                .fc .fc-button-primary { background: transparent !important; border: 2px solid #e2e8f0 !important; color: #64748b !important; font-weight: 800; text-transform: uppercase; font-size: 0.7rem; border-radius: 12px !important; padding: 8px 16px !important; }
-                .fc .fc-button-active { background: #0f172a !important; color: white !important; }
-                .fc-theme-standard td, .fc-theme-standard th { border: 1px solid #f1f5f9 !important; }
-                .dark .fc-theme-standard td, .dark .fc-theme-standard th { border: 1px solid #1e293b !important; }
-                .fc .fc-daygrid-day-number { padding: 12px !important; font-weight: 800; font-size: 0.9rem; color: #94a3b8; }
-                .fc-daygrid-event-dot { display: none !important; }
-            `}</style>
-
             <div className="flex-1 p-6 flex flex-col min-h-0">
                 <div className="flex-1 bg-white dark:bg-slate-900/50 rounded-[2.5rem] border border-slate-100 dark:border-slate-800 p-8 shadow-sm">
                     <FullCalendar
@@ -264,61 +260,20 @@ function AppCalendar() {
                 </div>
             </div>
 
-            {isModalOpen && (
-                <div className="fixed inset-0 z-9999 flex items-center justify-center bg-black/50 backdrop-blur-sm p-4">
-                    <div className="bg-white dark:bg-slate-900 p-8 rounded-4xl shadow-2xl w-full max-w-lg border border-slate-200 dark:border-slate-800 animate-in zoom-in duration-200">
-                        <h2 className="text-2xl font-black mb-6 flex items-center gap-3">
-                            <span className={`w-2 h-8 rounded-full ${editingTaskId ? 'bg-amber-500' : 'bg-blue-600'}`}></span>
-                            {editingTaskId ? 'Modifica' : 'Nuova Task'}
-                        </h2>
-                        <form onSubmit={handleSaveTask} className="space-y-5">
-                            <input className="w-full text-xl font-bold bg-transparent border-b-2 border-slate-100 dark:border-slate-800 focus:border-blue-500 outline-none pb-2"
-                                   placeholder="Titolo..." value={taskForm.title} required onChange={e => setTaskForm({...taskForm, title: e.target.value})}/>
-
-                            <div className="relative">
-                                <label className="text-[10px] font-black uppercase tracking-widest text-slate-400 mb-2 block">Stato</label>
-                                <button type="button" onClick={() => setIsStatusOpen(!isStatusOpen)} className="w-full flex items-center justify-between p-4 bg-slate-50 dark:bg-slate-800/50 rounded-2xl border border-slate-100 dark:border-slate-700">
-                                    <div className="flex items-center gap-3">
-                                        <div className={`w-3 h-3 rounded-full bg-[${getColorByStatus(taskForm.status)}]`}/>
-                                        <span className="font-bold text-sm uppercase">{STATUS_OPTIONS.find(o => o.value === taskForm.status)?.label}</span>
-                                    </div>
-                                </button>
-                                {isStatusOpen && (
-                                    <div className="absolute top-full mt-2 w-full bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-2xl shadow-2xl z-50 overflow-hidden">
-                                        {STATUS_OPTIONS.map((opt) => (
-                                            <button key={opt.value} type="button" onClick={() => { setTaskForm({...taskForm, status: opt.value}); setIsStatusOpen(false); }} className="w-full px-4 py-3 text-left hover:bg-slate-50 dark:hover:bg-slate-700 flex flex-col border-b last:border-none border-slate-50 dark:border-slate-700/50">
-                                                <div className="flex items-center gap-2">
-                                                    <opt.icon className={`w-4 h-4 ${opt.color}`} />
-                                                    <span className="text-[10px] font-black uppercase tracking-widest">{opt.label}</span>
-                                                </div>
-                                                <span className="text-[9px] text-slate-400 font-medium ml-6">{opt.desc}</span>
-                                            </button>
-                                        ))}
-                                    </div>
-                                )}
-                            </div>
-
-                            <div>
-                                <label className="text-[10px] font-black uppercase tracking-widest text-slate-400 mb-2 block">Categorie</label>
-                                <div className="flex flex-wrap gap-2">
-                                    {allCategories.map(cat => (
-                                        <button key={cat.id} type="button" onClick={() => toggleCategory(cat.id)} className={`px-4 py-2 rounded-xl text-[10px] font-black uppercase border transition-all ${taskForm.category.includes(cat.id) ? 'bg-blue-600 border-blue-600 text-white shadow-lg shadow-blue-500/30' : 'bg-slate-50 dark:bg-slate-800 border-slate-100 dark:border-slate-700 text-slate-400'}`}>
-                                            {cat.name}
-                                        </button>
-                                    ))}
-                                </div>
-                            </div>
-
-                            <input type="date" value={taskForm.due_date} className="w-full p-4 bg-slate-50 dark:bg-slate-800/50 rounded-2xl border border-slate-100 dark:border-slate-700 font-bold" onChange={e => setTaskForm({...taskForm, due_date: e.target.value})}/>
-
-                            <div className="flex justify-end gap-4 pt-4">
-                                <button type="button" onClick={() => setIsModalOpen(false)} className="text-[10px] font-black uppercase tracking-widest opacity-40 hover:opacity-100">Annulla</button>
-                                <button type="submit" className="px-10 py-4 bg-blue-600 text-white rounded-[1.2rem] font-black text-[10px] uppercase tracking-widest hover:scale-[1.02] transition-all">Salva</button>
-                            </div>
-                        </form>
-                    </div>
-                </div>
-            )}
+            <EventModal
+                isOpen={isModalOpen}
+                onClose={() => setIsModalOpen(false)}
+                editingTaskId={editingTaskId}
+                taskForm={taskForm}
+                setTaskForm={setTaskForm}
+                handleSaveTask={handleSaveTask}
+                allCategories={allCategories}
+                toggleCategory={toggleCategory}
+                STATUS_OPTIONS={STATUS_OPTIONS}
+                isStatusOpen={isStatusOpen}
+                setIsStatusOpen={setIsStatusOpen}
+                getColorByStatus={getColorByStatus}
+            />
         </div>
     );
 }

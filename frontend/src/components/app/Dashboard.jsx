@@ -1,11 +1,13 @@
 import { useEffect, useState } from "react";
 import api from "../../api.js";
 import {CheckCircleIcon, ClockIcon, ListBulletIcon, TrashIcon } from "@heroicons/react/24/outline";
-import {Link, useOutletContext} from "react-router-dom";
+import {Link, useNavigate, useOutletContext} from "react-router-dom";
 import FilterSystem from "./FilterSystem.jsx";
 import TaskCard from "./TaskCard.jsx";
+
 import DeletionModal from "../aesthetic/DeletionModal.jsx";
 import CreationModal from "../aesthetic/CreationModal.jsx";
+import EventModal from "../aesthetic/EventModal.jsx";
 
 // Sotto-componente per le card delle statistiche
 function StatCard({ title, value, icon: Icon, color }) {
@@ -29,8 +31,13 @@ function StatCard({ title, value, icon: Icon, color }) {
     );
 }
 
+/*
+    TODO: Impaginazione(gestione della visualizzazione delle task in modo che non ne appaiono 7000)
+*/
+
 function Dashboard({ isTrashView = false }) {
     const { appTasks, setAppTasks } = useOutletContext();
+    const navigate = useNavigate();
 
     const [tasks, setTasks] = useState([]);
     const [filteredTasks, setFilteredTasks] = useState([]);
@@ -134,6 +141,89 @@ function Dashboard({ isTrashView = false }) {
         }
     };
 
+    // Stati per il modale multitask
+    const [isEventModalOpen, setIsEventModalOpen] = useState(false);
+    const [isStatusOpen, setIsStatusOpen] = useState(false); // Per il dropdown interno al modale
+    const [editingTaskId, setEditingTaskId] = useState(null);
+    const [taskForm, setTaskForm] = useState({
+        title: '',
+        category: [],
+        status: 'tostart',
+        due_date: new Date().toISOString().split('T')[0]
+    });
+
+    // Helper per i colori (stessa logica del calendario)
+    const STATUS_OPTIONS = [
+        { value: 'tostart', label: 'Da Iniziare', icon: ClockIcon, color: 'text-slate-400', hex: '#94a3b8', desc: 'Attività non ancora avviata' },
+        { value: 'progress', label: 'In Corso', icon: ClockIcon, color: 'text-blue-500', hex: '#3b82f6', desc: 'Lavoro attualmente attivo' },
+        { value: 'pending', label: 'In Sospeso', icon: ClockIcon, color: 'text-amber-500', hex: '#f59e0b', desc: 'In attesa di altri fattori' },
+        { value: 'completed', label: 'Completata', icon: CheckCircleIcon, color: 'text-green-500', hex: '#22c55e', desc: 'Task portata a termine' }
+    ];
+
+    const getColorByStatus = (statusValue) => {
+        const option = STATUS_OPTIONS.find(opt => opt.value === statusValue);
+        return option ? option.hex : '#94a3b8';
+    };
+
+    // Apertura Modale al click sulla TaskCard se evento, altrimenti reindirizzamento
+    const handleTaskClick = (task) => {
+        if (task.type === 'note' || task.type === 'checklist') {
+            navigate(`/app/task/${task.id}`);
+        } else {
+            setEditingTaskId(task.id);
+            setTaskForm({
+                title: task.title || '',
+                category: task.categories || [],
+                status: task.status || 'tostart',
+                due_date: task.due_date || new Date().toISOString().split('T')[0]
+            });
+            setIsEventModalOpen(true);
+        }
+    };
+
+    // Modifica eventi
+    const handleSaveTask = async (e) => {
+        e.preventDefault();
+        try {
+            const payload = { ...taskForm, categories: taskForm.category };
+            await api.put(`tasks/${editingTaskId}/`, payload);
+
+            // Aggiornamento locale manuale
+            setAppTasks(prev => prev.map(t => {
+                if (t.id === editingTaskId) {
+                    return {
+                        ...t,
+                        title: taskForm.title,
+                        status: taskForm.status,
+                        due_date: taskForm.due_date,
+                        categories: taskForm.category
+                    };
+                }
+                return t;
+            }));
+
+            setIsEventModalOpen(false);
+        } catch (err) { console.error("Errore nel salvataggio:", err); }
+    };
+
+    // Eliminazione/spostamento nel cestino di eventi
+    const handleToggleTrash = async (id, shouldActive) => {
+        try {
+            await api.delete(`tasks/${id}/`);
+            setAppTasks(prev => prev.map(t => t.id === id ? { ...t, is_active: shouldActive } : t));
+            setIsEventModalOpen(false);
+        } catch (err) { console.error(err); }
+    };
+
+    // Ripristino eventi dal cestino
+    const handleRestoreTask = async (id) => {
+        try {
+            await api.put(`tasks/${id}/`, { action: 'restore' });
+            setAppTasks(prev => prev.map(t => t.id === id ? { ...t, is_active: true } : t));
+            setIsEventModalOpen(false);
+        } catch (err) { console.error(err); }
+    };
+
     return (
         <div className="space-y-10 animate-in fade-in duration-500">
             {/* INTESTAZIONE DINAMICA */}
@@ -199,8 +289,9 @@ function Dashboard({ isTrashView = false }) {
 
                     {filteredTasks.length > 0 ? (
                         filteredTasks.map(task => (
-                            <TaskCard key={task.id} task={task}
-                                categoriesMap={categoriesMap}/>
+                            <div key={task.id} onClick={() => handleTaskClick(task)} className="cursor-pointer">
+                                <TaskCard task={task} categoriesMap={categoriesMap} handleTaskClick={handleTaskClick} />
+                            </div>
                         ))
                     ) : (
                         // Logica per gestire i diversi messaggi di "Vuoto"
@@ -235,6 +326,34 @@ function Dashboard({ isTrashView = false }) {
                 }}
                 onSave={onSaveCategory}
                 editingCategory={editingCategory}
+            />
+
+            <EventModal
+                isOpen={isEventModalOpen}
+                onClose={() => setIsEventModalOpen(false)}
+                mode={isTrashView ? 'trash' : 'edit'}
+                editingTaskId={editingTaskId}
+                taskForm={taskForm}
+                setTaskForm={setTaskForm}
+                handleSaveTask={handleSaveTask}
+                handleDeleteTask={(id) => handleToggleTrash(id,false)}
+                handleRestoreTask={handleRestoreTask}
+                allCategories={Object.entries(categoriesMap).map(([id, data]) => ({
+                    id: parseInt(id),
+                    ...data
+                }))}
+                toggleCategory={(catId) => {
+                    setTaskForm(prev => ({
+                        ...prev,
+                        category: prev.category.includes(catId)
+                            ? prev.category.filter(id => id !== catId)
+                            : [...prev.category, catId]
+                    }));
+                }}
+                STATUS_OPTIONS={STATUS_OPTIONS}
+                isStatusOpen={isStatusOpen}
+                setIsStatusOpen={setIsStatusOpen}
+                getColorByStatus={getColorByStatus}
             />
         </div>
     );
