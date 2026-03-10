@@ -104,33 +104,24 @@ function EventModal({
                     <div className="flex items-center justify-end gap-4 pt-6 border-t border-slate-100 dark:border-slate-800">
                         {isTrashMode ? (
                             <>
-                                <button
-                                    type="button"
-                                    onClick={() => handlePermanentDelete(editingTaskId)}
-                                    className="flex items-center gap-2 text-red-500 font-black text-[10px] uppercase tracking-widest hover:bg-red-50 dark:hover:bg-red-900/20 px-4 py-2 rounded-xl transition-all"
-                                >
+                                <button type="button" onClick={() => handlePermanentDelete(editingTaskId)}
+                                    className="flex items-center gap-2 text-red-500 font-black text-[10px] uppercase tracking-widest hover:bg-red-50 dark:hover:bg-red-900/20 px-4 py-2 rounded-xl transition-all">
                                     <TrashIcon className="w-4 h-4"/> Elimina Definitivamente
                                 </button>
-                                <button
-                                    type="button"
-                                    onClick={() => handleRestoreTask(editingTaskId)}
-                                    className="flex items-center gap-2 px-8 py-4 bg-green-600 text-white rounded-2xl font-black text-[10px] uppercase tracking-widest hover:bg-green-700 shadow-lg shadow-green-500/20"
-                                >
+                                <button type="button" onClick={() => handleRestoreTask(editingTaskId)}
+                                    className="flex items-center gap-2 px-8 py-4 bg-green-600 text-white rounded-2xl font-black text-[10px] uppercase tracking-widest hover:bg-green-700 shadow-lg shadow-green-500/20">
                                     <ArrowPathIcon className="w-4 h-4"/> Ripristina
                                 </button>
                             </>
                         ) : (
                             <>
                                 {editingTaskId && (
-                                    <button
-                                        type="button"
-                                        onClick={() => handleDeleteTask(editingTaskId)}
-                                        className="mr-auto text-red-500 font-black text-[10px] uppercase tracking-widest hover:underline"
-                                    >
+                                    <button type="button" onClick={() => handleDeleteTask(editingTaskId)}
+                                        className="py-4 px-2 mr-auto rounded-2xl text-red-500 font-black text-[10px] bg-red-100/60 dark:bg-red-900/20  uppercase tracking-widest hover:underline">
                                         Sposta nel Cestino
                                     </button>
                                 )}
-                                <button type="button" onClick={onClose} className="text-[10px] font-black uppercase tracking-widest opacity-40 hover:opacity-100">Annulla</button>
+                                <button type="button" onClick={onClose} className="py-4 px-2 text-[10px] font-black uppercase tracking-widest opacity-40 hover:opacity-100">Annulla</button>
                                 <button type="submit" className="px-10 py-4 bg-blue-600 text-white rounded-2xl font-black text-[10px] uppercase tracking-widest shadow-lg shadow-blue-500/20 transition-all hover:scale-[1.02]">Salva</button>
                             </>
                         )}

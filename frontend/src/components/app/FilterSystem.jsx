@@ -26,7 +26,8 @@ function FilterSystem({ tasks, onFilterChange, showModal, setShowModal, categori
 
     const typeLabels = {
         'note': 'Note',
-        'list': 'Checklist'
+        'list': 'Checklist',
+        'event': 'Eventi'
     };
 
     const sortLabels = {
@@ -169,7 +170,8 @@ function FilterSystem({ tasks, onFilterChange, showModal, setShowModal, categori
             </div>
 
             {isAdvancedOpen && (
-                <div className="relative left-0 p-8 bg-slate-50 dark:bg-slate-900/50 border-2 border-slate-200 dark:border-slate-800 rounded-[2.5rem] grid grid-cols-1 md:grid-cols-3 gap-10 animate-in fade-in zoom-in duration-200">
+                <div className="relative p-6 md:p-8 bg-white dark:bg-slate-900 border-2 border-slate-200 dark:border-slate-800 rounded-[2.5rem]
+                    grid grid-cols-1 md:grid-cols-3 gap-6 md:gap-10 animate-in fade-in zoom-in duration-200 max-h-[70vh] overflow-y-auto custom-scrollbar shadow-xl z-40">
                     {/* STATO */}
                     <div className="space-y-4">
                         <p className="flex items-center gap-2 text-[10px] font-black uppercase tracking-[0.2em] text-slate-400"><TagIcon className="w-3 h-3"/> Stato Task</p>
@@ -268,7 +270,7 @@ function FilterSystem({ tasks, onFilterChange, showModal, setShowModal, categori
                                                 />
 
                                                 {openMenuId === id && (
-                                                    <div className="absolute top-full right-0 mt-2 w-32 bg-white dark:bg-slate-900 border-2 border-slate-900 dark:border-slate-700 rounded-xl shadow-xl z-[60] py-1 overflow-hidden animate-in fade-in slide-in-from-top-1">
+                                                    <div className="absolute top-full right-0 mt-2 w-32 bg-white dark:bg-slate-900 border-2 border-slate-900 dark:border-slate-700 rounded-xl shadow-xl z-60 py-1 overflow-hidden animate-in fade-in slide-in-from-top-1">
                                                         <button
                                                             onClick={(e) => {
                                                                 e.stopPropagation(); onEdit(id);

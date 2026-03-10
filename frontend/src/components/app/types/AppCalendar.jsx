@@ -60,11 +60,6 @@ const getItalianHolidays = (year) => {
     }));
 };
 
-
-/*
-    TODO: aggiungere ai filtri gli eventi
-*/
-
 function AppCalendar() {
     const [tasks, setTasks] = useState([]);
     const [holidays, setHolidays] = useState([]);

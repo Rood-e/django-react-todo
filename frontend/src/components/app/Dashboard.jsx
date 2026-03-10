@@ -31,10 +31,6 @@ function StatCard({ title, value, icon: Icon, color }) {
     );
 }
 
-/*
-    TODO: Impaginazione(gestione della visualizzazione delle task in modo che non ne appaiono 7000)
-*/
-
 function Dashboard({ isTrashView = false }) {
     const { appTasks, setAppTasks } = useOutletContext();
     const navigate = useNavigate();
@@ -49,6 +45,20 @@ function Dashboard({ isTrashView = false }) {
     const [showCategoryCreationModal, setshowCategoryCreationModal] = useState(false);
     const [editingCategory, setEditingCategory] = useState(null);
 
+    // --- LOGICA PAGINAZIONE ---
+    const [currentPage, setCurrentPage] = useState(1);
+    const tasksPerPage = 6;
+
+    const indexOfLastTask = currentPage * tasksPerPage;
+    const indexOfFirstTask = indexOfLastTask - tasksPerPage;
+    const currentTasks = filteredTasks.slice(indexOfFirstTask, indexOfLastTask);
+    const totalPages = Math.ceil(filteredTasks.length / tasksPerPage);
+
+    useEffect(() => {
+        setCurrentPage(1); // Reset pagina quando cambiano i filtri o la vista
+    }, [filteredTasks, isTrashView]);
+    // ---------------------------
+
     const handleEditCategory = (id) => {
         setEditingCategory({ id, ...categoriesMap[id] });
         setshowCategoryCreationModal(true);
@@ -57,39 +67,29 @@ function Dashboard({ isTrashView = false }) {
     useEffect(() => {
         const initDashboard = () => {
             if (!appTasks) return;
-
             setLoading(true);
-
             try {
                 const allTasks = appTasks.filter(task => task.is_active === !isTrashView);
-
                 setTasks(allTasks);
                 setFilteredTasks(allTasks);
-
-                // Calcolo statistiche locale
                 setStats({
                     total: allTasks.length,
                     completed: allTasks.filter(t => t.status === 'completed').length,
                     pending: allTasks.filter(t => t.status !== 'completed').length
                 });
-
             } catch (err) {
                 console.error("Errore inizializzazione Dashboard:", err);
             } finally {
                 setLoading(false);
             }
         }
-
         initDashboard();
-    }, [isTrashView,appTasks]);
+    }, [isTrashView, appTasks]);
 
-    // Caricamento categorie
     useEffect(() => {
         const initCats = async () => {
             try {
                 const catRes = await api.get('categories/');
-
-                // Creiamo la mappa delle categorie [ID]: {dati}
                 const map = {};
                 catRes.data.forEach(cat => {
                     map[cat.id] = { name: cat.name, color: cat.color };
@@ -97,18 +97,13 @@ function Dashboard({ isTrashView = false }) {
                 setCategoriesMap(map);
             } catch (err) {}
         }
-
         initCats();
-    },[]);
-
+    }, []);
 
     const handleEmptyTrash = async () => {
         try {
             await api.delete('tasks/?action=empty_trash')
-            setTasks([]);
-            setFilteredTasks([]);
             setAppTasks(prevTasks => prevTasks.filter(t => t.is_active === true));
-            setStats({ total: 0, completed: 0, pending: 0 });
         } catch (err) {
             console.error("Errore svuotamento cestino", err);
         } finally {
@@ -167,7 +162,7 @@ function Dashboard({ isTrashView = false }) {
 
     // Apertura Modale al click sulla TaskCard se evento, altrimenti reindirizzamento
     const handleTaskClick = (task) => {
-        if (task.type === 'note' || task.type === 'checklist') {
+        if (task.type === 'note' || task.type === 'list') {
             navigate(`/app/task/${task.id}`);
         } else {
             setEditingTaskId(task.id);
@@ -257,8 +252,8 @@ function Dashboard({ isTrashView = false }) {
             </div>
 
             {/* LISTA DEI TASK */}
-            <section className="space-y-6">
-                <header className="flex justify-between items-end">
+            <section className="flex flex-col h-150 min-h-100">
+                <header className="flex justify-between items-end mb-6 shrink-0">
                     <h2 className="text-xl font-black text-slate-900 dark:text-white uppercase tracking-widest">
                         {isTrashView ? "Task Eliminate" : "Le tue Task"}
                     </h2>
@@ -273,6 +268,7 @@ function Dashboard({ isTrashView = false }) {
                 </header>
 
                 {/* Filtri Avanzati */}
+                <div className='flex-1 overflow-y-auto pr-2 custom-scrollbar'>
                 {!loading && (
                     <FilterSystem
                         tasks={tasks}
@@ -285,32 +281,49 @@ function Dashboard({ isTrashView = false }) {
                     />
                 )}
 
-                <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
-
-                    {filteredTasks.length > 0 ? (
-                        filteredTasks.map(task => (
-                            <div key={task.id} onClick={() => handleTaskClick(task)} className="cursor-pointer">
-                                <TaskCard task={task} categoriesMap={categoriesMap} handleTaskClick={handleTaskClick} />
+                    <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
+                        {currentTasks.length > 0 ? (
+                            currentTasks.map(task => (
+                                <div key={task.id} onClick={() => handleTaskClick(task)} className="cursor-pointer h-fit">
+                                    <TaskCard task={task} categoriesMap={categoriesMap} />
+                                </div>
+                            ))
+                        ) : (
+                            // Logica per gestire i diversi messaggi di "Vuoto"
+                            <div className="col-span-full text-center p-12 bg-slate-50 dark:bg-slate-800/20 rounded-[3rem] border-2 border-dashed border-slate-200 dark:border-slate-800">
+                                {!loading && (
+                                    <>
+                                        <p className="text-slate-500 font-bold uppercase tracking-widest text-xs">
+                                            {tasks.length === 0 ? "Nessuna task presente" : "Nessun risultato per i filtri selezionati"}
+                                        </p>
+                                        {tasks.length === 0 && !isTrashView && (
+                                            <Link to="task/new" className="inline-block mt-4 text-blue-600 font-black hover:underline decoration-2 underline-offset-4">
+                                                CREANE UNA SUBITO
+                                            </Link>
+                                        )}
+                                    </>
+                                )}
                             </div>
-                        ))
-                    ) : (
-                        // Logica per gestire i diversi messaggi di "Vuoto"
-                        <div className="col-span-full text-center p-12 bg-slate-50 dark:bg-slate-800/20 rounded-[3rem] border-2 border-dashed border-slate-200 dark:border-slate-800">
-                            {!loading && (
-                                <>
-                                    <p className="text-slate-500 font-bold uppercase tracking-widest text-xs">
-                                        {tasks.length === 0 ? "Nessuna task presente" : "Nessun risultato per i filtri selezionati"}
-                                    </p>
-                                    {tasks.length === 0 && !isTrashView && (
-                                        <Link to="task/new" className="inline-block mt-4 text-blue-600 font-black hover:underline decoration-2 underline-offset-4">
-                                            CREANE UNA SUBITO
-                                        </Link>
-                                    )}
-                                </>
-                            )}
-                        </div>
-                    )}
+                        )}
+                    </div>
                 </div>
+
+
+                {/* CONTROLLI PAGINAZIONE */}
+                {totalPages > 1 && (
+                    <div className="flex justify-center items-center gap-6 mt-12 bg-white dark:bg-slate-900 p-4 rounded-3xl border border-slate-100 dark:border-slate-800 shadow-sm w-fit mx-auto">
+                        <button disabled={currentPage === 1} onClick={() => setCurrentPage(p => p - 1)} className="p-2 rounded-xl bg-slate-50 dark:bg-slate-800 hover:bg-blue-600 hover:text-white disabled:opacity-20 transition-all">
+                            <ChevronLeftIcon className="w-5 h-5" />
+                        </button>
+                        <div className="flex items-center gap-2">
+                            <span className="text-[10px] font-black text-blue-600 uppercase tracking-widest">Pagina {currentPage}</span>
+                            <span className="text-[10px] font-black text-slate-300 uppercase tracking-widest">di {totalPages}</span>
+                        </div>
+                        <button disabled={currentPage === totalPages} onClick={() => setCurrentPage(p => p + 1)} className="p-2 rounded-xl bg-slate-50 dark:bg-slate-800 hover:bg-blue-600 hover:text-white disabled:opacity-20 transition-all">
+                            <ChevronRightIcon className="w-5 h-5" />
+                        </button>
+                    </div>
+                )}
             </section>
 
 

@@ -15,7 +15,7 @@ function TaskCard({ task, isTrashView, categoriesMap, handleTaskClick }) {
                         ) : (
                             task.type === 'note' ?
                                 <DocumentTextIcon className="w-5 h-5 text-blue-500" /> :
-                            task.type === 'checklist' ?
+                            task.type === 'list' ?
                                 <ListBulletIcon className="w-5 h-5 text-blue-500"/>:
                                 <CalendarIcon className="w-5 h-5 text-blue-500"/>
                         )}
