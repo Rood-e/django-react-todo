@@ -1,6 +1,7 @@
 import FullCalendar from '@fullcalendar/react';
 import dayGridPlugin from '@fullcalendar/daygrid';
 import itLocale from '@fullcalendar/core/locales/it';
+import interactionPlugin from '@fullcalendar/interaction';
 import {useEffect, useRef, useState} from "react";
 import api from "../../../api.js";
 import {useNavigate} from "react-router-dom";
@@ -199,12 +200,24 @@ function AppCalendar() {
         }));
     };
 
+    const handleEventDrop = async (e) => {
+        try {
+            const event = e.event;
+            const newDate = event.startStr.split('T')[0];
+            // console.log(newDate);
+            await api.put(`/tasks/${event.id}/`, {due_date: newDate})
+        } catch (error) {
+            console.log(error);
+            e.revert(); //In caso di errori l'evento viene rimesso al punto di partenza
+        }
+    }
+
     return (
         <div className="h-screen w-full -mt-7 bg-white dark:bg-slate-900 flex flex-col overflow-hidden">
             <div className="flex-1 p-6 flex flex-col min-h-0">
                 <div className="flex-1 bg-white dark:bg-slate-900/50 rounded-[2.5rem] border border-slate-100 dark:border-slate-800 p-8 shadow-sm">
                     <FullCalendar
-                        plugins={[dayGridPlugin]}
+                        plugins={[dayGridPlugin,interactionPlugin]}
                         ref={calendarRef}
                         locale={itLocale}
                         dayMaxEvents={true}
@@ -226,6 +239,12 @@ function AppCalendar() {
                             }}
                         height="100%"
                         datesSet={handleDatesSet}
+
+                        editable = {true}
+                        eventStartEditable={true}
+                        droppable={true}
+                        eventDrop={handleEventDrop}
+
                         events={[...tasks,...holidays]}
                         eventClick={handleEventClick}
                         eventContent={(eventInfo) => {

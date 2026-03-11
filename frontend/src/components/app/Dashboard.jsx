@@ -1,6 +1,13 @@
 import { useEffect, useState } from "react";
 import api from "../../api.js";
-import {CheckCircleIcon, ClockIcon, ListBulletIcon, TrashIcon } from "@heroicons/react/24/outline";
+import {
+    CheckCircleIcon,
+    ChevronLeftIcon,
+    ChevronRightIcon,
+    ClockIcon,
+    ListBulletIcon,
+    TrashIcon
+} from "@heroicons/react/24/outline";
 import {Link, useNavigate, useOutletContext} from "react-router-dom";
 import FilterSystem from "./FilterSystem.jsx";
 import TaskCard from "./TaskCard.jsx";
