@@ -37,6 +37,11 @@ class Register(generics.CreateAPIView):
 User = get_user_model()
 
 class Login(ObtainAuthToken):
+    """
+        Endpoint di Login personalizzato.
+        Permette l'autenticazione tramite Email (più user-friendly)
+        restituendo un Token statico per le sessioni successive.
+    """
     def post(self, request, *args, **kwargs):
         email = request.data.get('email')
         password = request.data.get('password')
@@ -52,6 +57,7 @@ class Login(ObtainAuthToken):
         if user is not None:
             token, created = Token.objects.get_or_create(user=user)
 
+            # Aggiorna il timestamp dell'ultimo accesso per audit interno
             user.last_login = timezone.now()
             user.save(update_fields=['last_login'])
 
@@ -74,6 +80,10 @@ class Logout(APIView):
             return Response({"error": str(e)},status=status.HTTP_400_BAD_REQUEST)
 
 class UserProfile(APIView):
+    """
+        Gestisce il profilo dell'utente loggato.
+        Richiede sempre la password corrente per autorizzare modifiche sensibili.
+    """
     # Questi due garantiscono che solo chi ha un TOKEN valido possa entrare
     authentication_classes = [authentication.TokenAuthentication]
     permission_classes = [permissions.IsAuthenticated]
@@ -86,6 +96,7 @@ class UserProfile(APIView):
 
     # Modifica dati dell'utente
     def put(self, request, *args, **kwargs):
+        # SECURITY: Verifichiamo che l'utente conosca la password attuale prima di permettere il cambio email o nuova password.
         user = request.user
         data = request.data
 
@@ -126,6 +137,10 @@ class UserProfile(APIView):
         return Response(status=status.HTTP_204_NO_CONTENT)
 
 class Tasks(APIView):
+    """
+        Endpoint per la gestione delle Task.
+        Implementa il filtraggio rigoroso: ogni utente vede solo i propri dati.
+    """
     authentication_classes = [authentication.TokenAuthentication]
     permission_classes = [permissions.IsAuthenticated]
 
@@ -137,11 +152,14 @@ class Tasks(APIView):
 
     def get(self, request, pk=None):
         if pk:
+            # Recupero singola task verificando la proprietà
             task = Task.objects.prefetch_related('categories').filter(pk=pk, created_by=request.user).first()
             if not task:
                 return Response({"error": "Task non trovata"}, status=status.HTTP_404_NOT_FOUND)
             return Response(TaskSerializer(task).data)
 
+        # PERFORMANCE: prefetch_related riduce le query al DB caricando
+        # le categorie associate in un'unica operazione (evita il problema N+1)
         tasks = Task.objects.filter(
             created_by=request.user
         ).prefetch_related('categories').order_by('-created_at')
@@ -186,6 +204,13 @@ class Tasks(APIView):
         return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
 
     def delete(self, request, pk=None):
+        """
+            Logica a due stadi:
+            1. Se la task è attiva -> viene disattivata (Spostata nel cestino).
+            2. Se la task è già disattivata -> viene eliminata dal DB (Hard delete).
+            3. Supporta lo svuotamento totale del cestino tramite query param.
+        """
+
         # CASO 1: Svuotamento totale del cestino
         if not pk and request.query_params.get('action') == 'empty_trash':
             deleted_count, _ = Task.objects.filter(
@@ -214,7 +239,10 @@ class Tasks(APIView):
             return Response(status=status.HTTP_404_NOT_FOUND)
 
 class Categories(APIView):
-    # Questi due garantiscono che solo chi ha un TOKEN valido possa entrare
+    """
+    Gestione delle etichette (Categories).
+    Il sistema garantisce che un utente non possa vedere o modificare categorie altrui.
+    """
     authentication_classes = [authentication.TokenAuthentication]
     permission_classes = [permissions.IsAuthenticated]
 
