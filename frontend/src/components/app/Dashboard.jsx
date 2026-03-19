@@ -39,11 +39,13 @@ function StatCard({ title, value, icon: Icon, color }) {
 }
 
 function Dashboard({ isTrashView = false }) {
+    // Recupero task e funzioni di aggiornamento dal contesto globale dell'app
     const { appTasks, setAppTasks } = useOutletContext();
     const navigate = useNavigate();
 
-    const [tasks, setTasks] = useState([]);
-    const [filteredTasks, setFilteredTasks] = useState([]);
+    // Stati locali per la gestione della visualizzazione e dei modali
+    const [tasks, setTasks] = useState([]); // Task filtrate per stato is_active
+    const [filteredTasks, setFilteredTasks] = useState([]); // Task dopo i filtri avanzati
     const [categoriesMap, setCategoriesMap] = useState({});
     const [stats, setStats] = useState({ total: 0, completed: 0, pending: 0 });
     const [loading, setLoading] = useState(true);
@@ -53,32 +55,37 @@ function Dashboard({ isTrashView = false }) {
     const [editingCategory, setEditingCategory] = useState(null);
 
     // --- LOGICA PAGINAZIONE ---
+    // Gestione della visualizzazione limitata per ottimizzare le performance della UI
     const [currentPage, setCurrentPage] = useState(1);
     const tasksPerPage = 6;
 
     const indexOfLastTask = currentPage * tasksPerPage;
     const indexOfFirstTask = indexOfLastTask - tasksPerPage;
+    // Estrazione delle task da mostrare nella pagina corrente
     const currentTasks = filteredTasks.slice(indexOfFirstTask, indexOfLastTask);
     const totalPages = Math.ceil(filteredTasks.length / tasksPerPage);
 
+    // Reset pagina quando cambiano i filtri o la vista
     useEffect(() => {
-        setCurrentPage(1); // Reset pagina quando cambiano i filtri o la vista
+        setCurrentPage(1);
     }, [filteredTasks, isTrashView]);
-    // ---------------------------
 
     const handleEditCategory = (id) => {
         setEditingCategory({ id, ...categoriesMap[id] });
         setshowCategoryCreationModal(true);
     };
 
+    // Sincronizza lo stato locale con i dati provenienti dal contesto globale
     useEffect(() => {
         const initDashboard = () => {
             if (!appTasks) return;
             setLoading(true);
             try {
+                // Filtra tra task attive e task nel cestino in base alla prop isTrashView
                 const allTasks = appTasks.filter(task => task.is_active === !isTrashView);
                 setTasks(allTasks);
                 setFilteredTasks(allTasks);
+                // Aggiornamento dinamico delle statistiche in base alla vista corrente
                 setStats({
                     total: allTasks.length,
                     completed: allTasks.filter(t => t.status === 'completed').length,
@@ -107,6 +114,7 @@ function Dashboard({ isTrashView = false }) {
         initCats();
     }, []);
 
+    // Eliminazione permanente di tutti gli elementi nel cestino
     const handleEmptyTrash = async () => {
         try {
             await api.delete('tasks/?action=empty_trash')
@@ -183,14 +191,14 @@ function Dashboard({ isTrashView = false }) {
         }
     };
 
-    // Modifica eventi
+    // Gestione salvataggio modifiche (specifico per task di tipo 'event')
     const handleSaveTask = async (e) => {
         e.preventDefault();
         try {
             const payload = { ...taskForm, categories: taskForm.category };
             await api.put(`tasks/${editingTaskId}/`, payload);
 
-            // Aggiornamento locale manuale
+            // Aggiornamento dello stato globale: evita un refresh completo della pagina
             setAppTasks(prev => prev.map(t => {
                 if (t.id === editingTaskId) {
                     return {
@@ -228,7 +236,7 @@ function Dashboard({ isTrashView = false }) {
 
     return (
         <div className="space-y-10 animate-in fade-in duration-500">
-            {/* INTESTAZIONE DINAMICA */}
+            {/* Header: Titolo dinamico in base alla rotta (Dashboard o Cestino) */}
             <header className="flex justify-between items-end">
                 <div>
                     <h1 className="text-4xl font-black text-slate-900 dark:text-white uppercase tracking-tighter">
@@ -246,7 +254,7 @@ function Dashboard({ isTrashView = false }) {
                 </div>
             </header>
 
-            {/* GRIGLIA STATISTICHE */}
+            {/* Statistiche: Riassunto numerico delle task visualizzate */}
             <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
                 <StatCard
                     title={isTrashView ? "Nel Cestino" : "Totali"}
@@ -258,7 +266,7 @@ function Dashboard({ isTrashView = false }) {
                 <StatCard title="In Sospeso" value={stats?.pending || 0} icon={ClockIcon} color="orange" />
             </div>
 
-            {/* LISTA DEI TASK */}
+            {/* Container Principale Task: Implementa scroll interno per mantenere l'header fisso */}
             <section className="flex flex-col h-150 min-h-100">
                 <header className="flex justify-between items-end mb-6 shrink-0">
                     <h2 className="text-xl font-black text-slate-900 dark:text-white uppercase tracking-widest">
@@ -333,7 +341,7 @@ function Dashboard({ isTrashView = false }) {
                 )}
             </section>
 
-
+            {/* Modali: Gestione sovrapposta per Creazione Categorie, Eliminazione e Dettaglio Eventi */}
             <DeletionModal  showModal={showEmptyTrashModal} setShowModal={setShowEmptyTrashModal}
                             icon={TrashIcon} action={handleEmptyTrash} description={`Stai per eliminare definitivamente tutte le note presenti nel cestino. Questa azione non può essere annullata in alcun modo.`}
                             title={'Svuotare il cestino?'}/>

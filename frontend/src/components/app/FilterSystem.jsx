@@ -5,15 +5,22 @@ import {
 } from "@heroicons/react/24/outline";
 import api from "../../api.js";
 
-// Modifica la riga dei parametri della funzione
+/*
+ * Componente per la gestione dei filtri avanzati, ordinamento e categorie.
+ * Riceve la lista completa delle task e restituisce al padre (Dashboard)
+ * la lista filtrata tramite la callback onFilterChange.
+ */
 function FilterSystem({ tasks, onFilterChange, showModal, setShowModal, categories, setCategories, onEdit }) {
+    // Stati per gestire la visibilità dei pannelli UI
     const [isAdvancedOpen, setIsAdvancedOpen] = useState(false);
+    const [isSortOpen, setIsSortOpen] = useState(false);
+
+    // Stati dei criteri di filtraggio
     const [selectedStatuses, setSelectedStatuses] = useState([]);
     const [selectedTypes, setSelectedTypes] = useState([]);
     const [selectedCategories, setSelectedCategories] = useState([]);
     const [timeframe, setTimeframe] = useState('all');
     const [sortBy, setSortBy] = useState('newest');
-    const [isSortOpen, setIsSortOpen] = useState(false);
     const [openMenuId,setOpenMenuId] = useState(null);
     const sortRef = useRef(null);
 
@@ -42,22 +49,27 @@ function FilterSystem({ tasks, onFilterChange, showModal, setShowModal, categori
         return () => document.removeEventListener("mousedown", handleClick);
     }, []);
 
+    // --- LOGICA DI FILTRAGGIO E ORDINAMENTO ---
+    // Questo effetto scatta ogni volta che cambiano i criteri o la lista originale delle task
     useEffect(() => {
         let result = [...tasks];
+        // 1. Filtro per Stato, Tipologia e Categorie
         if (selectedStatuses.length > 0) result = result.filter(t => selectedStatuses.includes(t.status));
         if (selectedTypes.length > 0) result = result.filter(t => selectedTypes.includes(t.type));
+
         if (selectedCategories.length > 0) {
             result = result.filter(t => {
                 // Se il task non ha categorie, lo escludiamo
                 if (!t.categories || !Array.isArray(t.categories)) return false;
 
-                // Trasformiamo gli ID del task in stringhe per il confronto con selectedCategories
+                // Confronto tra gli ID delle categorie (trasformati in stringhe per coerenza)
                 return t.categories.some(catId =>
                     selectedCategories.includes(catId.toString())
                 );
             });
         }
 
+        // 2. Filtro Temporale (Oggi, Settimana, Scaduti)
         if (timeframe !== 'all') {
             const now = new Date(); now.setHours(0,0,0,0);
             result = result.filter(t => {
@@ -73,6 +85,7 @@ function FilterSystem({ tasks, onFilterChange, showModal, setShowModal, categori
             });
         }
 
+        // 3. Ordinamento finale dei risultati
         result.sort((a, b) => {
             if (sortBy === 'newest') return new Date(b.created_at) - new Date(a.created_at);
             if (sortBy === 'oldest') return new Date(a.created_at) - new Date(b.created_at);
@@ -86,8 +99,10 @@ function FilterSystem({ tasks, onFilterChange, showModal, setShowModal, categori
         onFilterChange(result);
     }, [selectedStatuses, selectedTypes, selectedCategories, timeframe, sortBy, tasks]);
 
+    // Funzione per aggiungere/rimuovere criteri dai filtri multi-selezione
     const toggle = (val, state, set) => set(prev => prev.includes(val) ? prev.filter(i => i !== val) : [...prev, val]);
 
+    // Eliminazione categoria: cancella dal DB e aggiorna lo stato locale mappato
     const internalCategoryDelete = async (id) => {
         try {
             await api.delete(`categories/${id}/`);
@@ -104,6 +119,7 @@ function FilterSystem({ tasks, onFilterChange, showModal, setShowModal, categori
 
     return (
         <div className="w-full mb-10 space-y-4">
+            {/* Toolbar Superiore: Bottoni principali e Ordinamento */}
             <div className="flex flex-wrap items-center justify-between gap-4">
                 <div className="flex items-center gap-3">
                     <div className="flex items-center gap-2">
@@ -169,6 +185,7 @@ function FilterSystem({ tasks, onFilterChange, showModal, setShowModal, categori
                 </div>
             </div>
 
+            {/* Pannello Filtri Avanzati: Visibile solo al click */}
             {isAdvancedOpen && (
                 <div className="relative p-6 md:p-8 bg-white dark:bg-slate-900 border-2 border-slate-200 dark:border-slate-800 rounded-[2.5rem]
                     grid grid-cols-1 md:grid-cols-3 gap-6 md:gap-10 animate-in fade-in zoom-in duration-200 max-h-[70vh] overflow-y-auto custom-scrollbar shadow-xl z-40">

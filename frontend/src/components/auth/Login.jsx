@@ -107,7 +107,7 @@ function Login(){
         // Django spesso lo mette in "error" o "non_field_errors"
         const isBackendInvalid = !!backendErrors[djangoFieldName] || !!backendErrors['error'];
 
-        // CORREZIONE LOGICA: deve essere rosso SE frontend invalido OPPURE backend invalido
+        // Rosso se frontend invalido OPPURE backend invalido
         const isInvalid = isFrontendInvalid || isBackendInvalid;
 
         return `w-full px-4 py-3 bg-slate-100 dark:bg-slate-800/50 border-2 rounded-2xl transition-all outline-none 

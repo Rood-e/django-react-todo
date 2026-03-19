@@ -1,6 +1,6 @@
 import { Link } from 'react-router-dom';
 
-export default function Error404() {
+function Error404() {
     return (
         <div className="grid h-screen place-items-center bg-white dark:bg-slate-950 px-6 py-24 sm:py-32 lg:px-8 text-center transition-colors duration-500">
             <div className="relative">
@@ -29,3 +29,5 @@ export default function Error404() {
         </div>
     );
 }
+
+export default Error404;

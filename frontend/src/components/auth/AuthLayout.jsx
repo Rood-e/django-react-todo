@@ -6,6 +6,7 @@ import {useNavigate} from "react-router-dom";
 const lightColors = ["#FFFFFF", "#F0F9FF", "#3B82F6", "#DBEAFE"];
 const darkColors = ["#142749", "#1549c5", "#3469a6", "#0e2160"];
 
+/* Componente padre per il contenimento dei form di login/registrazione */
 function AuthLayout({children,isDark,setIsDark}) {
     const [isTransitioning, setIsTransitioning] = useState(false);
     const navigate = useNavigate();
@@ -16,11 +17,13 @@ function AuthLayout({children,isDark,setIsDark}) {
         return () => clearTimeout(timeout);
     }, [isDark]);
 
+    // Se l'utente ha già effettuato l'accesso, allora viene automaticamente mandato alla dashbaord
     if(localStorage.getItem('token'))
         navigate('/app');
 
     return (
         <div className="min-h-screen flex items-center justify-center bg-slate-50 dark:bg-slate-950 px-4 transition-colors duration-250">
+            {/* Sfondo con gradiente */}
             <div className="absolute inset-0 z-0">
                 <MeshGradient
                     colors={isDark ? darkColors : lightColors}

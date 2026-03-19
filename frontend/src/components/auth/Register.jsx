@@ -5,7 +5,6 @@ import api from "../../api.js";
 import {ArrowLeftIcon} from "@heroicons/react/24/outline";
 import LoadingOverlay from '../aesthetic/LoadingOverlay.jsx'
 
-// Parametri invertiti per coerenza con la chiamata nel try/catch
 const sendRegistration = async (data) => {
     return await api.post('register/', data);
 }

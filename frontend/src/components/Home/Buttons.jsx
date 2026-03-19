@@ -1,6 +1,7 @@
 import {Link} from "react-router-dom";
 
-const Buttons = () => {
+/* Pulsanti di accesso/registrazione */
+function Buttons() {
     const token = localStorage.getItem('token');
     if(token)
         return (

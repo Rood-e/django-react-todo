@@ -6,7 +6,6 @@ const ContactForm = () => {
     const handleSubmit = (e) => {
         e.preventDefault();
         setStatus('Inviando...');
-        // TODO: Aggiungere via Django l'invio della mail
         setTimeout(() => setStatus('Messaggio inviato con successo!'), 1500);
     };
 
@@ -23,38 +22,26 @@ const ContactForm = () => {
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                     <div>
                         <label className="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-2">Nome</label>
-                        <input
-                            type="text"
-                            required
+                        <input type="text" required placeholder="Il tuo nome"
                             className="w-full px-4 py-3 bg-slate-100 dark:bg-slate-800 border-none rounded-xl focus:ring-2 focus:ring-blue-500 transition-all outline-none"
-                            placeholder="Il tuo nome"
                         />
                     </div>
                     <div>
                         <label className="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-2">Email</label>
-                        <input
-                            type="email"
-                            required
+                        <input type="email" required placeholder="tua@email.com"
                             className="w-full px-4 py-3 bg-slate-100 dark:bg-slate-800 border-none rounded-xl focus:ring-2 focus:ring-blue-500 transition-all outline-none"
-                            placeholder="tua@email.com"
                         />
                     </div>
                 </div>
 
                 <div>
                     <label className="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-2">Messaggio</label>
-                    <textarea
-                        rows="5"
-                        required
-                        className="w-full px-4 py-3 bg-slate-100 dark:bg-slate-800 border-none rounded-xl focus:ring-2 focus:ring-blue-500 transition-all outline-none"
-                        placeholder="Come possiamo aiutarti?"
-                    ></textarea>
+                    <textarea rows="5" required  placeholder="Come possiamo aiutarti?"
+                        className="w-full px-4 py-3 bg-slate-100 dark:bg-slate-800 border-none rounded-xl focus:ring-2 focus:ring-blue-500 transition-all outline-none"></textarea>
                 </div>
 
-                <button
-                    type="submit"
-                    className="w-full md:w-auto px-10 py-4 bg-blue-600 hover:bg-blue-500 text-white font-bold rounded-xl transition-all shadow-lg shadow-blue-500/25"
-                >
+                <button type="submit"
+                    className="w-full md:w-auto px-10 py-4 bg-blue-600 hover:bg-blue-500 text-white font-bold rounded-xl transition-all shadow-lg shadow-blue-500/25">
                     Invia Messaggio
                 </button>
 

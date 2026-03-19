@@ -1,18 +1,15 @@
-const FeatureDisplay = ({ activeFeature }) => {
+function FeatureDisplay ({ activeFeature }) {
 
     return (
         <div className="relative w-full h-full flex flex-col items-center justify-between shadow-xl p-8 bg-white dark:bg-slate-800 rounded-2xl overflow-hidden">
 
             {/* SVG per il Bordo Animato */}
             <svg className="absolute inset-0 w-full h-full pointer-events-none">
-                <rect
-                    x="2"
-                    y="2"
+                <rect x="2" y="2" rx="16"
                     width="calc(100% - 4px)"
                     height="calc(100% - 4px)"
-                    rx="16"
                     fill="transparent"
-                    stroke={activeFeature.rgb}// Colore blue-500
+                    stroke={activeFeature.rgb}// blue-500
                     strokeWidth="8" // Spessore visibile
                     pathLength="1"  // Normalizza la lunghezza a 1
                     className="animate-border-draw"
@@ -34,6 +31,6 @@ const FeatureDisplay = ({ activeFeature }) => {
             </p>
         </div>
     );
-};
+}
 
 export default FeatureDisplay;

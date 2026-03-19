@@ -3,7 +3,7 @@ function LoadingOverlay({ message = "Caricamento in corso..." }) {
         <div className="fixed inset-0 z-100 flex flex-col items-center justify-center bg-slate-900/40 backdrop-blur-[2px] animate-in fade-in duration-300">
             {/* Contenitore Spinner */}
             <div className="relative flex items-center justify-center">
-                {/* Cerchio esterno statico (opzionale per estetica) */}
+                {/* Cerchio esterno statico */}
                 <div className="w-16 h-16 border-4 border-slate-200/30 rounded-full"></div>
 
                 {/* Spinner Animato */}

@@ -11,6 +11,10 @@ import {
 } from "@heroicons/react/24/outline";
 import DeletionModal from "../../aesthetic/DeletionModal.jsx";
 
+/*
+ * Editor per le Note basato su Tiptap.
+ * Gestisce contenuti HTML complessi (H1, H2, liste, citazioni).
+ */
 function NoteEditor({ task, isNew, onSave, onDelete, onRestore, isSaving, categories }) {
     const navigate = useNavigate();
     const statusMenuRef = useRef(null);
@@ -29,8 +33,9 @@ function NoteEditor({ task, isNew, onSave, onDelete, onRestore, isSaving, catego
 
     const isArchived = task?.is_active === false;
 
+    // Inizializzazione dell'istanza dell'editor
     const editor = useEditor({
-        editable: !isArchived,
+        editable: !isArchived, // Disabilita l'editing se la nota è nel cestino
         extensions: [
             StarterKit.configure({
                 heading: { levels: [1, 2] },
@@ -38,9 +43,10 @@ function NoteEditor({ task, isNew, onSave, onDelete, onRestore, isSaving, catego
                 orderedList: true,
             }),
         ],
-        content: "",
+        content: "", // Il contenuto viene iniettato successivamente dall'useEffect
         editorProps: {
             attributes: {
+                // Classi Tailwind per lo styling del contenuto generato dall'editor
                 class: 'outline-none prose prose-slate dark:prose-invert max-w-none text-xl min-h-[500px] leading-relaxed cursor-text p-10',
             },
         },
@@ -55,6 +61,7 @@ function NoteEditor({ task, isNew, onSave, onDelete, onRestore, isSaving, catego
         return () => document.removeEventListener("mousedown", handleClickOutside);
     }, []);
 
+    // Effetto per caricare i dati della task nell'editor e negli stati locali
     useEffect(() => {
         if (task) {
             setTitle(task.title || "");
@@ -86,7 +93,7 @@ function NoteEditor({ task, isNew, onSave, onDelete, onRestore, isSaving, catego
         if (!editor || isArchived) return;
         await onSave({
             title,
-            content: editor.getHTML(),
+            content: editor.getHTML(), // Estrazione del contenuto formattato come stringa HTML pronta per il database
             due_date: dueDate || null,
             status,
             categories: selectedCatIds
@@ -102,6 +109,8 @@ function NoteEditor({ task, isNew, onSave, onDelete, onRestore, isSaving, catego
 
     return (
         <div className="flex flex-col h-screen bg-white dark:bg-slate-900 transition-colors duration-300">
+            {/* Override CSS per Tiptap: Forza lo stile delle liste e dei titoli
+                che altrimenti verrebbero resettati dai default di Tailwind */}
             <style>{`
                 .ProseMirror ul { list-style-type: disc !important; padding-left: 1.5em !important; }
                 .ProseMirror ol { list-style-type: decimal !important; padding-left: 1.5em !important; }

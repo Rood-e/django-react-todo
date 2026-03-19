@@ -3,6 +3,7 @@ import { Link, Outlet } from 'react-router-dom';
 import ThemeButton from '../ThemeButton';
 import { ArrowLeftIcon } from '@heroicons/react/24/outline';
 
+/* Componente padre per il contenimento di Privacy/Contact/Terms */
 function LegalHub ({isDark, setIsDark}) {
     return (
         <div className="min-h-screen bg-slate-50 dark:bg-slate-950 pt-32 pb-20">

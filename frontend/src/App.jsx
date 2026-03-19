@@ -38,6 +38,7 @@ function App() {
 
     return (
         <div className={isDark ? 'dark' : ''}>
+            {/* Alert Toaster */}
             <Toaster position="top-right"
                      toastOptions={{
                              className: 'rounded-xl p-4 font-medium text-sm flex items-center gap-3 border cursor-pointer select-none',
@@ -107,14 +108,13 @@ function App() {
                     {/* /app/task/new o /app/task/123 */}
                     <Route path="task/:id" element={<TaskDetail />} />
 
-                    {/* Spostata qui per mantenere Sidebar e Layout */}
                     <Route path="account" element={<Settings />} />
 
-                    {/* Futura rotta Calendario */}
+                    {/* Calendario */}
                      <Route path="calendar" element={<AppCalendar />} />
                 </Route>
 
-                {/* Catch-all 404 */}
+                {/* ERROR 404 */}
                 <Route path='*' element={<Error404/>}/>
             </Routes>
         </div>

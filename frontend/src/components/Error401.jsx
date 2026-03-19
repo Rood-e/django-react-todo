@@ -1,6 +1,6 @@
 import { Link } from 'react-router-dom';
 
-export default function Error401({children}) {
+function Error401({children}) {
     const token = localStorage.getItem('token');
 
     if (token)
@@ -34,3 +34,5 @@ export default function Error401({children}) {
         </div>
     );
 }
+
+export default Error401;

@@ -21,6 +21,11 @@ const getColorByStatus = (statusValue) => {
     return option ? option.hex : '#94a3b8';
 };
 
+/*
+ * Calcola le festività italiane basate sull'anno visualizzato.
+ * Include il calcolo dinamico della Pasqua tramite l'algoritmo di Gauss
+ * per coprire correttamente anche le festività mobili.
+ */
 const getItalianHolidays = (year) => {
     const a = year % 19, b = Math.floor(year / 100), c = year % 100;
     const d = Math.floor(b / 4), e = b % 4, f = Math.floor((b + 8) / 25);
@@ -82,12 +87,14 @@ function AppCalendar() {
     useEffect(() => {
         const fetchData = async () => {
             try {
+                // Fetch parallela di task e categorie per ottimizzare i tempi di caricamento
                 const [tasksResp, catsResp] = await Promise.all([
                     api.get('/tasks/'),
                     api.get('/categories/')
                 ]);
                 setAllCategories(catsResp.data);
 
+                // Trasformazione delle task in "Event Objects" compatibili con FullCalendar
                 const taskEvents = tasksResp.data
                     .filter(task => task.due_date && task.is_active === true)
                     .map(task => ({
@@ -106,10 +113,10 @@ function AppCalendar() {
     }, []);
 
     const handleDatesSet = (dateInfo) => {
-        // Estrazione dell'anno dal calendario
+        // Rileva l'anno attualmente visibile nel calendario
         const displayedYear = dateInfo.view.currentStart.getFullYear();
 
-        // Se è diverso da quello memorizzato, ricalcola
+        // Ricalcola le festività solo se l'utente ha navigato verso un anno differente
         if (lastYearRef.current !== displayedYear) {
             lastYearRef.current = displayedYear;
             setHolidays(getItalianHolidays(displayedYear));
@@ -145,6 +152,7 @@ function AppCalendar() {
 
             const calendarApi = calendarRef.current.getApi();
             if (editingTaskId) {
+                // Aggiornamento diretto dell'istanza FullCalendar (UI fluida)
                 const ev = calendarApi.getEventById(editingTaskId);
                 ev.setProp('title', taskForm.title);
                 ev.setStart(taskForm.due_date);
@@ -152,6 +160,7 @@ function AppCalendar() {
                 ev.setExtendedProp('status', taskForm.status);
                 ev.setExtendedProp('category', taskForm.category);
             } else {
+                // Aggiunta dinamica del nuovo evento senza ricaricare l'intera lista
                 calendarApi.addEvent({
                     id: resp.data.id,
                     title: resp.data.title,
@@ -161,8 +170,7 @@ function AppCalendar() {
                 });
             }
 
-            // 3. SINCRONIZZAZIONE STATO REACT (Opzionale ma consigliata)
-            // Aggiorna lo stato locale così se cambi vista e torni indietro i dati ci sono
+            // Sincronizzazione stato React per mantenere coerenza tra i cambi di vista
             if (!editingTaskId) {
                 setTasks(prev => [...prev, {
                     id: resp.data.id,
@@ -200,14 +208,15 @@ function AppCalendar() {
         }));
     };
 
+    // Gestisce il rilascio di un evento dopo il trascinamento (Drag & Drop)
     const handleEventDrop = async (e) => {
         try {
             const event = e.event;
             const newDate = event.startStr.split('T')[0];
-            // console.log(newDate);
+            // Aggiornamento persistente della nuova data di scadenza sul backend
             await api.put(`/tasks/${event.id}/`, {due_date: newDate})
         } catch (error) {
-            console.log(error);
+            // console.log(error);
             e.revert(); //In caso di errori l'evento viene rimesso al punto di partenza
         }
     }
@@ -247,7 +256,9 @@ function AppCalendar() {
 
                         events={[...tasks,...holidays]}
                         eventClick={handleEventClick}
+                        {/* Rendering personalizzato del contenuto dell'evento */}
                         eventContent={(eventInfo) => {
+                            // Gestione speciale per le festività (sfondo)
                             if (eventInfo.event.display === 'background')
                                 return <div className="p-2 text-[10px] font-black uppercase text-pink-700 dark:text-red-100 opacity-40">{eventInfo.event.title}</div>;
 
@@ -256,6 +267,7 @@ function AppCalendar() {
                             return (
                                 <div className="flex items-center justify-between w-full group py-0.5 px-2 cursor-pointer">
                                     <div className="flex items-center min-w-0">
+                                        {/* Icona dinamica: cambia tra Note, Checklist e Task Standard */}
                                         <span style={{"color": dotColor}}>
                                             {type === 'note' ? <DocumentTextIcon className="w-4 h-4" /> :
                                                 type === 'list' ? <ListBulletIcon className="w-4 h-4"/> :

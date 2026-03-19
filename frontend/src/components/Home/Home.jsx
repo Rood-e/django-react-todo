@@ -67,6 +67,7 @@ function Home({isDark, setIsDark}) {
                 <ThemeButton isDark={isDark} setIsDark={setIsDark}/>
             </div>
 
+            {/* Pulsanti di accesso/registrazione */}
             <div className="absolute top-6 right-6 flex items-center gap-4 z-50">
                 <Buttons/>
             </div>

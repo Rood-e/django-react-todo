@@ -1,5 +1,6 @@
 import { SunIcon, MoonIcon } from '@heroicons/react/24/outline';
 
+/* Pulsante per il cambio tema chiaro/scuro */
 function ThemeButton({isDark,setIsDark}) {
     return (
         <button onClick={() => setIsDark(!isDark)}

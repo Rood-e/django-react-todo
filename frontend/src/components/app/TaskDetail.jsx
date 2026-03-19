@@ -37,19 +37,25 @@ function TypeCard({ title, desc, icon: Icon, onClick }) {
     );
 }
 
+/*
+ * Componente TaskDetail: gestisce la visualizzazione, creazione e modifica
+ * delle task individuali (Note e Checklist).
+ * Funziona come un router interno basato sull'ID del parametro URL.
+ */
 function TaskDetail() {
-    const { setAppTasks } = useOutletContext();
-
+    const { setAppTasks } = useOutletContext(); // Context per aggiornare la lista globale
     const navigate = useNavigate();
-    const { id } = useParams();
+    const { id } = useParams(); // 'new' indica una nuova task, altrimenti è l'ID del DB
     const isNew = id === 'new';
 
+    // Stati per la gestione dei dati e della UI
     const [task, setTask] = useState(null);
-    const [loading, setLoading] = useState(!isNew);
-    const [isSaving, setIsSaving] = useState(false);
-    const [selectedType, setSelectedType] = useState(null);
+    const [loading, setLoading] = useState(!isNew); // Caricamento attivo solo se stiamo recuperando una task esistente
+    const [isSaving, setIsSaving] = useState(false); // Feedback visivo durante le chiamate API
+    const [selectedType, setSelectedType] = useState(null); // 'note' o 'list' (solo per nuove task)
     const [categories, setCategories] = useState({});
 
+    // Recupera le categorie disponibili all'avvio per popolare i selettori negli editor
     useEffect(() => {
         const fetchCats = async () => {
             try {
@@ -66,6 +72,7 @@ function TaskDetail() {
         console.log(categories);
     }, [categories]);*/
 
+    // Se l'ID non è 'new', recupera i dettagli della task dal database
     useEffect(() => {
         if (!isNew) {
             const fetchTask = async () => {
@@ -82,14 +89,17 @@ function TaskDetail() {
         }
     }, [id, isNew]);
 
+    // Gestione unificata del salvataggio (POST per nuove, PUT per esistenti)
     const onSave = async (payload) => {
         try {
             setIsSaving(true);
             if (isNew) {
+                // Creazione: invia i dati e reindirizza all'ID creato
                 const res = await api.post("tasks/", { ...payload, type: selectedType });
                 setAppTasks(prev => [payload, ...prev]);
                 navigate(`/app/task/${res.data.id}`, { replace: true });
             } else {
+                // Modifica: aggiorna il DB e sincronizza lo stato globale
                 await api.put(`tasks/${id}/`, payload);
                 setTask(prev => ({ ...prev, ...payload }))
                 setAppTasks(prev => prev.map(t => {
@@ -105,6 +115,7 @@ function TaskDetail() {
         }
     };
 
+    // Gestione eliminazione: sposta nel cestino (is_active = false)
     const onDelete = async () => {
         setIsSaving(true);
         try {
@@ -113,7 +124,7 @@ function TaskDetail() {
             setAppTasks(prev => {
                 const numericId = Number(id);
 
-                // Se il task deve diventare attivo, aggiorna l'oggetto nella lista
+                // Aggiorna lo stato globale riflettendo lo spostamento nel cestino
                 if (task.is_active)
                     return prev.map(t => t.id === numericId ? { ...t, is_active: false } : t);
 
@@ -164,6 +175,7 @@ function TaskDetail() {
         </div>
     );
 
+    // VIEW 1: Selezione tipologia (Mostrata solo per nuove task non ancora tipizzate)
     if (isNew && !selectedType) {
         return (
             <div className="flex flex-col items-center justify-center min-h-[calc(100vh-160px)] animate-in fade-in zoom-in-95 duration-500">
@@ -198,6 +210,7 @@ function TaskDetail() {
 
     const type = isNew ? selectedType : task?.type;
 
+    // VIEW 2: Editor specifico (Caricato in base al tipo di task)
     return (
         /* Centratura anche per gli editor se sono brevi */
         <div className={'-mt-4'}>

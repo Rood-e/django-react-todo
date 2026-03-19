@@ -1,14 +1,17 @@
 import {ArrowPathIcon, DocumentTextIcon, ListBulletIcon, TrashIcon, CalendarIcon} from "@heroicons/react/24/outline";
 
 function TaskCard({ task, isTrashView, categoriesMap, handleTaskClick }) {
-    // Calcolo per il colore della scadenza
+    // --- LOGICA DI VISUALIZZAZIONE ---
+    // Determina se la task ha superato la data di scadenza (ignorando l'ora)
     const isOverdue = task.due_date && new Date(task.due_date) < new Date().setHours(0,0,0,0);
     const hasDueDate = !!task.due_date;
 
     return (
         <div onClick={() => handleTaskClick(task)} className="cursor-pointer block group">
+            {/* Il container usa 'group' per attivare effetti sui figli al passaggio del mouse */}
             <div className="p-5 bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-3xl flex items-center justify-between transition-all duration-300 shadow-sm hover:shadow-xl hover:shadow-blue-500/10 hover:-translate-y-1 border-b-4 hover:border-blue-500">
                 <div className="flex items-center gap-4">
+                    {/* Icona variabile: cambia in base al tipo (Nota, Lista, Evento) o stato Cestino */}
                     <div className={`p-2 rounded-xl ${isTrashView ? 'bg-red-50 dark:bg-red-900/20' : 'bg-blue-50 dark:bg-blue-900/20'}`}>
                         {isTrashView ? (
                             <TrashIcon className="w-5 h-5 text-red-500" />
@@ -21,11 +24,12 @@ function TaskCard({ task, isTrashView, categoriesMap, handleTaskClick }) {
                         )}
                     </div>
                     <div>
+                        {/* TITOLO */}
                         <h3 className={`font-bold text-slate-900 dark:text-white transition-colors ${isTrashView ? 'group-hover:text-red-500' : 'group-hover:text-blue-600'}`}>
                             {task.title || "Senza titolo"}
                         </h3>
 
-                        {/* Riga Metadati: Scadenza e Categorie */}
+                        {/* Riga Metadati: Gestione della scadenza con alert visivo se scaduta */}
                         <div className="flex flex-wrap items-center gap-3 mt-1">
                             {hasDueDate ? (
                                 <div className={`flex items-center gap-1 text-[9px] font-black uppercase tracking-tighter ${isOverdue ? 'text-red-500' : 'text-slate-400'}`}>
@@ -40,7 +44,7 @@ function TaskCard({ task, isTrashView, categoriesMap, handleTaskClick }) {
                             )}
 
 
-                            {/* Rendering dinamico delle Categorie tramite ID e Mappa */}
+                            {/* Mapping delle Categorie: Trasforma gli ID ricevuti dal server in Badge colorati */}
                             <div className="flex flex-wrap gap-1">
                                 {task.categories && task.categories.length > 0 ? (
                                     task.categories.map(catId => {
@@ -74,7 +78,7 @@ function TaskCard({ task, isTrashView, categoriesMap, handleTaskClick }) {
                     </div>
                 </div>
 
-                {/* Badge di stato o di eliminazione */}
+                {/* Status Badge: Traduzione degli slug del backend in etichette user-friendly */}
                 <div className="flex items-center gap-3">
                     {
                         isTrashView && (

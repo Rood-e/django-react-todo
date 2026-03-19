@@ -23,6 +23,7 @@ function Settings(){
     const [loading, setLoading] = useState(false);
     const [loadingMessage, setLoadingMessage] = useState('');
 
+    // GET: dati utente
     useEffect(() => {
         const fetchUser = async () => {
             try {
@@ -35,14 +36,15 @@ function Settings(){
         fetchUser();
     }, []);
 
+    // Pulizia del campo ed eliminazione degli errori durante la scrittura dell'utente
     const handleChange = (e) => {
         setFormData({ ...formData, [e.target.name]: e.target.value });
         // Pulisce l'errore del campo mentre l'utente scrive
-        if (fieldErrors[e.target.name]) {
+        if (fieldErrors[e.target.name])
             setFieldErrors({ ...fieldErrors, [e.target.name]: null });
-        }
     };
 
+    // Invio dati al backend
     const handleSubmit = async (e) => {
         e.preventDefault();
         setMessage({ type: '', text: '' });
@@ -76,6 +78,7 @@ function Settings(){
         }
     };
 
+    // Eliminazione Utente
     const deleteUser = async () => {
         setLoadingMessage('Eliminazione account...');
         setLoading(true);

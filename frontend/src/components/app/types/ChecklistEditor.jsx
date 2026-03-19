@@ -16,8 +16,13 @@ const STATUS_OPTIONS = [
     { value: 'completed', label: 'Completata', icon: CheckCircleIcon, color: 'text-green-500', desc: 'Task portata a termine' }
 ];
 
+/*
+ * Editor specializzato per le liste di controllo (Checklist).
+ * Gestisce il contenuto come un array di oggetti JSON salvato in un unico campo di testo nel DB.
+ */
 function ChecklistEditor({ task, isNew, onSave, onDelete, onRestore, isSaving, categories }) {
     const navigate = useNavigate();
+    // Ref per gestire la chiusura dei menu a comparsa al click esterno
     const statusMenuRef = useRef(null);
     const catMenuRef = useRef(null);
 
@@ -29,10 +34,12 @@ function ChecklistEditor({ task, isNew, onSave, onDelete, onRestore, isSaving, c
     const [isStatusOpen, setIsStatusOpen] = useState(false);
     const [isCatMenuOpen, setIsCatMenuOpen] = useState(false);
     const [showDeleteModal, setShowDeleteModal] = useState(false);
+    // Inizializzazione degli item: se esiste un contenuto lo parsa, altrimenti crea una riga vuota
     const [items, setItems] = useState(
         task?.content ? JSON.parse(task.content) : [{ id: Date.now(), text: "", checked: false }]
     );
 
+    // Identifica se la task è nel cestino per disabilitare le interazioni di modifica
     const isArchived = task?.is_active === false;
 
     useEffect(() => {
@@ -54,6 +61,7 @@ function ChecklistEditor({ task, isNew, onSave, onDelete, onRestore, isSaving, c
     const handleInternalSave = async () => {
         if (isArchived) return;
 
+        // Serializzazione dell'array di oggetti in stringa JSON per il database
         const contentPayload = items.length > 0 ? JSON.stringify(items) : "[]";
 
         await onSave({

@@ -5,14 +5,21 @@ import {
 import { Link, useLocation } from "react-router-dom";
 import { useState, useEffect } from "react";
 
+/*
+ * Sidebar di navigazione principale con funzionalità di espansione automatica.
+ * Gestisce il conteggio dinamico delle task attive e di quelle nel cestino.
+ */
 function Sidebar({ isOpen, setIsOpen, tasks }) {
     const location = useLocation();
+    // Stato locale per memorizzare il numero di task per categoria (Badge)
     const [counts, setCounts] = useState({ active: 0, trash: 0 });
 
+    // Ricalcola i conteggi ogni volta che la lista tasks globale cambia
     useEffect(() => {
         setCounts({ active: tasks.filter(task => task.is_active === true).length, trash: tasks.filter(task => task.is_active === false).length });
     }, [tasks])
 
+    // Configurazione centralizzata delle voci di menu per facilitare la manutenzione
     const navItems = [
         { to: "/app", icon: ChartBarSquareIcon, label: "Dashboard", count: counts.active, color: "text-blue-600", bg: "bg-blue-600" },
         { to: "/app/calendar", icon: CalendarDaysIcon, label: "Calendario", count: null, color: "text-indigo-600", bg: "bg-indigo-600" },
@@ -25,7 +32,7 @@ function Sidebar({ isOpen, setIsOpen, tasks }) {
             onMouseLeave={() => setIsOpen(false)}
             className={`h-screen sticky top-0 flex flex-col border-r border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 transition-all duration-500 ease-in-out ${isOpen ? 'w-72' : 'w-24'}`}
         >
-            {/* LOGO SECTION */}
+            {/* LOGO */}
             <div className="flex flex-col items-center py-8 flex-none h-32">
                 <div className={`transition-all duration-500 ${!isOpen ? 'scale-100 opacity-100' : 'scale-0 opacity-0 h-0'}`}>
                     <div className="h-12 w-12 bg-blue-600 rounded-2xl flex items-center justify-center shadow-lg shadow-blue-500/30">
@@ -39,7 +46,7 @@ function Sidebar({ isOpen, setIsOpen, tasks }) {
                 </div>
             </div>
 
-            {/* NAVIGATION SECTION */}
+            {/* NAVIGATION */}
             <div className="grow flex flex-col px-4">
                 <Link to="/app/task/new" className={`flex items-center mb-10 bg-slate-900 dark:bg-white text-white dark:text-slate-900 rounded-2xl transition-all duration-300 shadow-xl hover:shadow-2xl active:scale-95 ${isOpen ? 'p-4 gap-4' : 'h-14 w-14 justify-center mx-auto'}`}>
                     <PlusIcon className="w-6 h-6 stroke-3" />
@@ -69,7 +76,7 @@ function Sidebar({ isOpen, setIsOpen, tasks }) {
                 </nav>
             </div>
 
-            {/* FOOTER SECTION */}
+            {/* FOOTER */}
             <div className="p-4 space-y-2 border-t border-slate-100 dark:border-slate-800 flex-none">
                 <Link to="/app/account" className="flex items-center h-12 text-slate-400 hover:text-slate-900 dark:hover:text-white group transition-all rounded-xl">
                     <div className={`flex items-center justify-center transition-all duration-500 ${isOpen ? 'w-16' : 'w-full'}`}>
