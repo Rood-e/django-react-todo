@@ -256,7 +256,7 @@ function AppCalendar() {
 
                         events={[...tasks,...holidays]}
                         eventClick={handleEventClick}
-                        {/* Rendering personalizzato del contenuto dell'evento */}
+                        /* Rendering personalizzato del contenuto dell'evento */
                         eventContent={(eventInfo) => {
                             // Gestione speciale per le festività (sfondo)
                             if (eventInfo.event.display === 'background')
