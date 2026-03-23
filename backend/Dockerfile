@@ -1,16 +1,23 @@
-# Python's light version
+# Versione leggera di Python
 FROM python:3.12-slim
 
-# To avoid that Python creates .pyc files and assuring the output is visible
+# Evita file .pyc e assicura output immediato nei log
 ENV PYTHONDONTWRITEBYTECODE 1
 ENV PYTHONUNBUFFERED 1
 
-# Create and set the working directory in the container
+# Directory di lavoro
 WORKDIR /app
 
-# Install dependencies
-COPY requirements.txt /app/
-RUN pip install --no-cache-dir -r requirements.txt
+# Installiamo le dipendenze di sistema necessarie per PostgreSQL (se servissero)
+# e aggiorniamo pip
+RUN apt-get update && apt-get install -y libpq-dev gcc && rm -rf /var/lib/apt/lists/*
 
-# Copy the rest of the code
+# Copia e installa i requisiti
+COPY requirements.txt /app/
+RUN pip install --upgrade pip && pip install --no-cache-dir -r requirements.txt
+
+# Copia il resto del codice
 COPY . /app/
+
+# Espone la porta 8000 (standard per Django)
+EXPOSE 8000

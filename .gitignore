@@ -8,6 +8,8 @@ venv/
 ENV/
 db.sqlite3
 staticfiles/
+*.pyc
+postgres_data_prod/
 
 # Gestione cartella Media (Ignora i file caricati ma tieni la cartella nel repo)
 /backend/media/*
