@@ -1,18 +1,11 @@
 services:
-  # DATABASE (Gestito da Render)
-  - type: db
-    name: postgres-db
-    plan: free
-    databaseName: my_app_db
-    user: db_user
-
   # IL BACKEND (Docker)
   - type: web
     name: backend-service
     runtime: docker
+    plan: free
     dockerContext: ./backend
     dockerfilePath: Dockerfile
-    plan: free
     envVars:
       - key: DATABASE_URL
         fromDatabase:
@@ -22,8 +15,6 @@ services:
         value: "False"
       - key: SECRET_KEY
         generateValue: true
-      - key: DB_HOST
-        value: db
       - key: ALLOWED_HOSTS
         value: "*"
 
@@ -31,12 +22,19 @@ services:
   - type: web
     name: frontend-service
     runtime: docker
+    plan: free
     dockerContext: ./frontend
     dockerfilePath: Dockerfile.prod
-    plan: free
     envVars:
       - key: VITE_API_URL
         fromService:
           type: web
           name: backend-service
           property: host
+
+# SEZIONE SEPARATA PER IL DATABASE
+databases:
+  - name: postgres-db
+    plan: free
+    databaseName: my_app_db
+    user: db_user
