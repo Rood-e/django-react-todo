@@ -13,7 +13,7 @@ WORKDIR /app
 RUN apt-get update && apt-get install -y libpq-dev gcc && rm -rf /var/lib/apt/lists/*
 
 # Copia e installa i requisiti
-COPY requirements.txt /app/
+COPY ./backend/requirements.txt /app/
 RUN pip install --upgrade pip && pip install --no-cache-dir -r requirements.txt
 
 # Copia il resto del codice
