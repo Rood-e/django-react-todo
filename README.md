@@ -6,7 +6,7 @@
 [![React Version](https://img.shields.io/badge/react-18-61dafb.svg)](https://reactjs.org/)
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
 
-TaskMaster è un ecosistema avanzato per la gestione della produttività che combina la potenza di **Django REST Framework** con la reattività di **React**. Progettato con un'architettura containerizzata, offre un'esperienza fluida per la gestione di note rich-text, checklist dinamiche e scadenze, garantendo la massima sicurezza dei dati.
+TaskMaster is an advanced productivity management ecosystem that combines the power of **Django REST Framework** with the responsiveness of **React**. Built on a containerized architecture, it offers a seamless experience for managing rich-text notes, dynamic checklists, and deadlines, ensuring maximum data security.
 
 ---
 
@@ -24,20 +24,20 @@ TaskMaster è un ecosistema avanzato per la gestione della produttività che com
 
 ---
 
-## 🚀 Caratteristiche Principali
+## 🚀 Key Features
 
 ### 🎨 Frontend (React + Tailwind CSS)
-* **Editor Rich-Text:** Integrazione avanzata con Tiptap (H1, H2, liste, citazioni).
-* **Visualizzazione Calendario:** FullCalendar per una gestione temporale visiva e intuitiva.
-* **Checklist Dinamiche:** Liste di controllo con persistenza dati in formato JSON.
-* **Dashboard Intelligente:** Filtraggio in tempo reale per Stato, Categoria e Tipologia.
-* **UI/UX Moderna:** Supporto nativo Dark Mode e design responsive.
+* **Rich-Text Editor:** Advanced integration with Tiptap (H1, H2, lists, quotes).
+* **Calendar View:** FullCalendar for visual and intuitive time management.
+* **Dynamic Checklists:** Checklists with data persistence in JSON format.
+* **Smart Dashboard:** Real-time filtering by Status, Category, and Type.
+* **Modern UI/UX:** Native Dark Mode support and responsive design.
 
 ### ⚙️ Backend (Django REST Framework)
-* **Isolamento Multi-Tenant:** Logica di filtraggio rigorosa; ogni utente accede esclusivamente ai propri record (**Zero-Leakage**).
-* **Soft Delete:** Sistema di "Cestino" che permette il ripristino o l'eliminazione definitiva.
-* **Ottimizzazione Query:** Utilizzo di `prefetch_related` per risolvere il problema **N+1**.
-* **Sicurezza:** Validazione Cross-User contro attacchi **IDOR** e parametri `write_only` nei Serializer.
+* **Multi-Tenant Isolation:** Strict filtering logic; each user accesses only their own records (**Zero-Leakage**).
+* **Soft Delete:** “Recycle Bin” system that allows for restoration or permanent deletion.
+* **Query Optimization:** Use of `prefetch_related` to resolve the **N+1** problem.
+* **Security:** Cross-User validation against **IDOR** attacks and `write_only` parameters in Serializers.
 
 ---
 
@@ -54,16 +54,15 @@ TaskMaster è un ecosistema avanzato per la gestione della produttività che com
 
 ## 🐳 Setup con Docker (Consigliato)
 
-1.  **Clona il repository:**
+1.  **Clona repository:**
     ```bash
     git clone [https://github.com/Rood-e/TaskMaster.git](https://github.com/Rood-e/TaskMaster.git)
     cd TaskMaster
     ```
 
-2.  **Configura le variabili d'ambiente:**
-    Crea un file `.env` nella root del progetto (usa `.env.example` come traccia).
+2.  **Set .env variables:**
 
-3.  **Avvio Rapido:**
+3.  **Quick Start:**
     ```bash
     docker-compose up --build
     ```
@@ -75,40 +74,40 @@ TaskMaster è un ecosistema avanzato per la gestione della produttività che com
 
 ---
 
-## 🔌 API Reference (Esempi)
+## 🔌 API Reference
 
-| Metodo | Endpoint | Descrizione | Autenticazione |
+| Method | Endpoint | Description | Authentication |
 | :--- | :--- | :--- | :--- |
-| `GET` | `/api/tasks/` | Lista task dell'utente loggato | Token |
-| `POST` | `/api/tasks/` | Crea una nuova task | Token |
-| `PATCH` | `/api/tasks/{id}/` | Aggiornamento parziale / Soft Delete | Token |
-| `GET` | `/api/categories/` | Lista categorie filtrate per utente | Token |
+| `GET` | `/api/tasks/` | List of tasks for the logged-in user | Token |
+| `POST` | `/api/tasks/` | Create a new task | Token |
+| `PATCH` | `/api/tasks/{id}/` | Partial update / Soft delete | Token |
+| `GET` | `/api/categories/` | List of categories filtered by user | Token |
 
 ---
 
 
-## 🛡️ Sicurezza e Integrità
+## 🛡️ Security and Integrity
 
-* **Validazione Cross-User:** Protezione lato server contro attacchi **IDOR** (Insecure Direct Object Reference). Ogni richiesta verifica che l'oggetto appartenga all'utente autenticato.
-* **Password Security:** Utilizzo di parametri `write_only` nei Serializer per evitare leak di dati sensibili nelle risposte JSON.
-* **Data Persistence:** Gestione dei volumi Docker per garantire la persistenza del database PostgreSQL anche dopo lo spegnimento dei container.
-* **Autenticazione Stateless**: Sistema basato su Token (DRF Token Authentication). La sicurezza è garantita senza l'uso di sessioni lato server, rendendo l'API scalabile e protetta.
+* **Cross-User Validation:** Server-side protection against **IDOR** (Insecure Direct Object Reference) attacks. Each request verifies that the object belongs to the authenticated user.
+* **Password Security:** Use of `write_only` parameters in serializers to prevent leaks of sensitive data in JSON responses.
+* **Data Persistence:** Management of Docker volumes to ensure the persistence of the PostgreSQL database even after containers are shut down.
+* **Stateless Authentication**: Token-based system (DRF Token Authentication). Security is guaranteed without the use of server-side sessions, making the API scalable and secure.
 ---
 
-## 🛠️ Limitazioni Attuali e Roadmap (Future Features)
+## 🛠️ Current Limitations and Roadmap (Future Features)
 
-Essendo TaskMaster in fase di sviluppo attivo, sono state identificate le seguenti aree di miglioramento e funzionalità pianificate:
+The following areas for improvement and planned features have been identified:
 
-* **Gestione Sessioni Statefull**: Attualmente il sistema utilizza esclusivamente Token Authentication (Stateless). È prevista l'implementazione di sessioni lato server e Cookie HttpOnly per una maggiore flessibilità nei diversi casi d'uso web.
-* **Auto-Save System**: Implementazione del salvataggio automatico (debounce) dopo N secondi di inattività nell'editor Rich-Text per prevenire la perdita accidentale di dati.
-* **Notifiche Push & WebSocket**: Integrazione con Django Channels per notifiche in tempo reale sulla scadenza dei task senza necessità di refresh.
+* **Stateful Session Management**: Currently, the system uses only Token Authentication (Stateless). We plan to implement server-side sessions and HttpOnly cookies for greater flexibility across various web use cases.
+* **Auto-Save System**: Implementation of automatic saving (debounce) after N seconds of inactivity in the Rich-Text editor to prevent accidental data loss.
+* **Push Notifications & WebSockets**: Integration with Django Channels for real-time notifications on task deadlines without the need to refresh. 
 ---
 
 ## 👨‍💻 Autore
 
 **Rudy Martucci Ortega**
 * **GitHub:** [@Rood-e](https://github.com/Rood-e)
-* **LinkedIn:** [Rudy Martucci Ortega](https://www.linkedin.com/in/rudy-martucci-ortega-891b96299/)
+* **LinkedIn:** [Rudy Martucci Ortega]([https://www.linkedin.com/in/rudy-martucci-ortega-891b96299/](https://www.linkedin.com/in/rudymartucciortega/))
 
 ---
-*TaskMaster - Sviluppato per una gestione task professionale e sicura.*
+*TaskMaster - Designed for professional and secure task management.*
