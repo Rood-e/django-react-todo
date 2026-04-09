@@ -107,7 +107,7 @@ The following areas for improvement and planned features have been identified:
 
 **Rudy Martucci Ortega**
 * **GitHub:** [@Rood-e](https://github.com/Rood-e)
-* **LinkedIn:** [Rudy Martucci Ortega](https://www.linkedin.com/in/rudy-martucci-ortega-891b96299/](https://www.linkedin.com/in/rudymartucciortega/)
+* **LinkedIn:** [Rudy Martucci Ortega](https://www.linkedin.com/in/rudymartucciortega/)
 
 ---
 *TaskMaster - Designed for professional and secure task management.*
