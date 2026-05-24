@@ -22,6 +22,23 @@ import {useAuth} from "./components/auth/AuthContext.jsx";
 import {Toaster} from "react-hot-toast";
 import LoadingOverlay from "./components/aesthetic/LoadingOverlay.jsx";
 
+// Una semplice rotta protetta al volo dentro App.jsx
+const ProtectedApp = ({ children }) => {
+    const { user, loading } = useAuth();
+
+    if (loading) {
+        return <LoadingOverlay message={'Verifica sessione...'}/>;
+    }
+
+    // Se il check è finito e l'utente NON è loggato, allora mostriamo l'Error401
+    if (!user) {
+        return <Error401 />;
+    }
+
+    // Se l'utente c'è, carichiamo l'applicazione
+    return children;
+};
+
 function App() {
     const [isDark, setIsDark] = useState(() => {
         return localStorage.theme === 'dark' ||
@@ -92,11 +109,11 @@ function App() {
                     <AuthLayout isDark={isDark} setIsDark={setIsDark}><Register/></AuthLayout>
                 }/>
 
-                {/* App Routes (Protette da Error401) */}
+                {/* App Routes (Protette in modo sicuro) */}
                 <Route path='/app' element={
-                    <Error401>
+                    <ProtectedApp>
                         <AppLayout isDark={isDark} setIsDark={setIsDark} />
-                    </Error401>
+                    </ProtectedApp>
                 }>
                     {/* /app */}
                     <Route index element={<Dashboard />} />

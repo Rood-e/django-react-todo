@@ -21,14 +21,9 @@ function AuthLayout({children,isDark,setIsDark}) {
     }, [isDark]);
 
     useEffect(() => {
-        const checkUser = () => {
-            if(user)
-                navigate('/app');
-        }
-
-        if(!loading)
-            checkUser();
-    },[loading])
+        if (!loading && user)
+            navigate('/app');
+    }, [loading, user, navigate]);
 
     if(loading)
         return <LoadingOverlay message="Caricamento in corso..." />
