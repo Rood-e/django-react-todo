@@ -5,20 +5,19 @@ const baseurl = import.meta.env.VITE_API_URL;
 
 const api = axios.create({
     baseURL: baseurl,
-    withCredentials: true, // per l'invio ricezione dei cookie
-    xsrfCookieName: 'csrftoken', // nome del cookie
-    xsrfHeaderName: 'X-CSRFToken', // header che Django aspetta di ricevere
+    withCredentials: true, 
+    xsrfCookieName: 'csrftoken', 
+    xsrfHeaderName: 'X-CSRFToken', 
     headers: {
         'Content-Type': 'application/json',
     }
-})
+});
 
 // Intercettore Risposte (Logica Toast Centralizzata)
 api.interceptors.response.use(
     (response) => {
         const method = response.config.method.toUpperCase();
         if (['POST', 'PUT', 'DELETE'].includes(method)) {
-            // Usa il messaggio del backend o uno di default
             const message = response.data?.message || "Operazione completata";
             toast.success(message);
         }
@@ -26,32 +25,41 @@ api.interceptors.response.use(
     },
     (error) => {
         const status = error.response ? error.response.status : null;
-        const isAppPath = window.location.pathname.startsWith('/app')
+        const data = error.response ? error.response.data : null; // Spostata qui per essere visibile ovunque sotto
+        const isAppPath = window.location.pathname.startsWith('/app');
 
         if (status === 401 || status === 403) {
-            if(isAppPath){
+            // Si evita il reindirizzamento forzato se si controlla l'utente corrente
+            const isCurrentUserCheck = error.config.url.includes('current-user') || error.config.url.includes('me');
+            
+            if (isAppPath && !isCurrentUserCheck) {
                 toast.error("Sessione non valida o scaduta");
+                // Invece di distruggere lo stato con window.location.href, svuota la sessione se necessario
+                // o lascia che sia il sistema di rotte (ProtectedRoutes) a fare il redirect pulito.
                 window.location.href = '/login';
             }
         }
         else if (status === 400 && data) {
-            const data = error.response ? error.response.data : null;
-
             Object.keys(data).forEach((field) => {
                 const messages = data[field];
-                // Se il campo è 'categories' e l'errore è dovuto alla mancanza,
-                // possiamo decidere di ignorarlo o mostrare un messaggio specifico.
                 if (Array.isArray(messages)) {
                     messages.forEach(msg => {
-                        toast.error(msg);
+                        toast.error(`${field}: ${msg}`);
                     });
+                } else if (typeof messages === 'string') {
+                    toast.error(messages);
                 }
             });
         }
-        else if (status >= 500)
+        else if (status >= 500) {
             toast.error("Errore critico del server");
-        else
-            toast.error("Errore di connessione");
+        }
+        else {
+            // Evita di mostrare l'errore generico se la richiesta è stata cancellata o se è un check silente
+            if (!axios.isCancel(error)) {
+                toast.error("Errore di connessione o autorizzazione mancante");
+            }
+        }
 
         return Promise.reject(error);
     }
@@ -60,7 +68,6 @@ api.interceptors.response.use(
 // Intercettore di Richiesta: Estrae il cookie a mano e lo mette nell'header
 api.interceptors.request.use(
     (config) => {
-        // Funzione rapida per leggere un cookie specifico da JS
         const getCookie = (name) => {
             const value = `; ${document.cookie}`;
             const parts = value.split(`; ${name}=`);
@@ -69,8 +76,9 @@ api.interceptors.request.use(
 
         const csrfToken = getCookie('csrftoken');
 
-        if (csrfToken)
+        if (csrfToken) {
             config.headers['X-CSRFToken'] = csrfToken;
+        }
 
         return config;
     },
