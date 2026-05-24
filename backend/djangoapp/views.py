@@ -5,7 +5,7 @@ from rest_framework import generics, status, authentication, permissions
 from rest_framework.authtoken.models import Token
 from rest_framework.authtoken.views import ObtainAuthToken
 from rest_framework.permissions import AllowAny,IsAuthenticated
-from rest_framework.authentication import TokenAuthentication
+from rest_framework.authentication import TokenAuthentication, BasicAuthentication
 from rest_framework.response import Response
 from rest_framework.views import APIView
 from django.views.decorators.csrf import csrf_exempt, ensure_csrf_cookie
@@ -59,10 +59,9 @@ User = get_user_model()
                 'error': "Credenziali non valide"
             }, status=status.HTTP_400_BAD_REQUEST) """
 
-@method_decorator(csrf_exempt, name='dispatch')
-@permission_classes([AllowAny])
 class Login(APIView):
-    permission_classes = [permissions.AllowAny]
+    permission_classes = [AllowAny]
+    authentication_classes = [BasicAuthentication] 
 
     def post(self, request, *args, **kwargs):
         email = request.data.get('email')
@@ -78,17 +77,18 @@ class Login(APIView):
             user = None
 
         if user is not None:
-            login(request, user) # Questo imposta il sessionid
+            login(request, user) # Questo crea la sessione pulita e tracciata dal middleware
 
-            # Si forza Django a generare il cookie CSRF fisicamente ora che l'utente è loggato
-            from django.middleware.csrf import get_token
-            get_token(request)
-
-            return Response({
+            # Ora che la vista NON è csrf_exempt, questo get_token scrive il cookie in modo REALE e persistente
+            response = Response({
                 "message": "Login effettuato con successo",
                 "username": user.username,
                 "email": user.email
             }, status=status.HTTP_200_OK)
+            
+            # Per sicurezza matematica, generiamo il token e lo infiliamo direttamente nella risposta
+            get_token(request) 
+            return response
         else:
             return Response({"error": "Credenziali errate"}, status=status.HTTP_401_UNAUTHORIZED)
 
