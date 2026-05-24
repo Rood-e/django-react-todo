@@ -10,6 +10,7 @@ from rest_framework.response import Response
 from rest_framework.views import APIView
 from django.views.decorators.csrf import csrf_exempt, ensure_csrf_cookie
 from django.utils.decorators import method_decorator
+from django.middleware.csrf import get_token
 
 from .models import Task, Category
 from .serializers import UserSerializer, TaskSerializer, CategorySerializer
