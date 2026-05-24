@@ -60,6 +60,7 @@ User = get_user_model()
             }, status=status.HTTP_400_BAD_REQUEST) """
 
 @method_decorator(csrf_exempt, name='dispatch')
+@permission_classes([AllowAny])
 class Login(APIView):
     permission_classes = [permissions.AllowAny]
 
