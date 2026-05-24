@@ -42,7 +42,7 @@ REST_FRAMEWORK = {
         'rest_framework.permissions.IsAuthenticated',
     ],
     'DEFAULT_AUTHENTICATION_CLASSES': [
-        'rest_framework.authentication.SessionAuthentication',
+        'djangoproj.settings.UnsafeSessionAuthentication',
         'rest_framework.authentication.TokenAuthentication',
     ],
 }
@@ -124,3 +124,10 @@ STATICFILES_DIRS = [BASE_DIR / 'static']
 STATIC_ROOT = os.path.join(BASE_DIR, 'staticfiles')
 MEDIA_URL = 'media/'
 MEDIA_ROOT = BASE_DIR / 'media'
+
+
+from rest_framework.authentication import SessionAuthentication
+
+class UnsafeSessionAuthentication(SessionAuthentication):
+    def enforce_csrf(self, request):
+        return  # Salta il controllo CSRF, ci fidiamo del sessionid mandato da Vercel
