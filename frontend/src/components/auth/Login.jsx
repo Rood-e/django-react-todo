@@ -85,7 +85,7 @@ function Login(){
 
             localStorage.setItem('auth_session_token', Date.now().toString());
 
-            navigate('/app');
+            window.location.href = '/app';
         } catch (e) {
             if (e.response && e.response.data) {
                 setBackendErrors(e.response.data);
