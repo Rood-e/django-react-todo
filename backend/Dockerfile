@@ -12,11 +12,11 @@ WORKDIR /app
 RUN apt-get update && apt-get install -y libpq-dev gcc && rm -rf /var/lib/apt/lists/*
 
 # Copia e installa i requisiti
-COPY ./requirements.txt /app/
+COPY ./backend/requirements.txt /app/
 RUN pip install --upgrade pip && pip install --no-cache-dir -r requirements.txt
 
 # Copia tutto il contenuto della cartella backend nella cartella /app del container
-COPY . /app/
+COPY ./backend/ /app/
 
 # Espone la porta 10000 (standard per Render)
 EXPOSE 10000
