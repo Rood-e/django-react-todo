@@ -29,13 +29,13 @@ api.interceptors.response.use(
         const isAppPath = window.location.pathname.startsWith('/app');
 
         if (status === 401 || status === 403) {
-            // Si evita il reindirizzamento forzato se si controlla l'utente corrente
-            const isCurrentUserCheck = error.config.url.includes('current-user') || error.config.url.includes('me');
+            // Controllo totalmente sicuro controllando la presenza di 'me' o 'user/me'
+            const url = error.config?.url || "";
+            const isCurrentUserCheck = url.includes('current-user') || url.includes('me') || url.includes('user/me');
             
+            // Se è il check iniziale dell'utente corrente a fallire, NO redirect a /login.
             if (isAppPath && !isCurrentUserCheck) {
                 toast.error("Sessione non valida o scaduta");
-                // Invece di distruggere lo stato con window.location.href, svuota la sessione se necessario
-                // o lascia che sia il sistema di rotte (ProtectedRoutes) a fare il redirect pulito.
                 window.location.href = '/login';
             }
         }
