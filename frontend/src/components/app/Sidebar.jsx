@@ -2,8 +2,10 @@ import {
     CalendarDaysIcon, PlusIcon, Cog6ToothIcon, ChartBarSquareIcon,
     ArrowLeftOnRectangleIcon, TrashIcon
 } from '@heroicons/react/24/outline';
-import { Link, useLocation } from "react-router-dom";
+import {Link, useLocation, useNavigate} from "react-router-dom";
 import { useState, useEffect } from "react";
+import api from "../../api.js";
+import {useAuth} from "../auth/AuthContext.jsx";
 
 /*
  * Sidebar di navigazione principale con funzionalità di espansione automatica.
@@ -11,8 +13,10 @@ import { useState, useEffect } from "react";
  */
 function Sidebar({ isOpen, setIsOpen, tasks }) {
     const location = useLocation();
+    const navigate = useNavigate();
     // Stato locale per memorizzare il numero di task per categoria (Badge)
     const [counts, setCounts] = useState({ active: 0, trash: 0 });
+    const {setUser} = useAuth();
 
     // Ricalcola i conteggi ogni volta che la lista tasks globale cambia
     useEffect(() => {
@@ -25,6 +29,18 @@ function Sidebar({ isOpen, setIsOpen, tasks }) {
         { to: "/app/calendar", icon: CalendarDaysIcon, label: "Calendario", count: null, color: "text-indigo-600", bg: "bg-indigo-600" },
         { to: "/app/trash", icon: TrashIcon, label: "Cestino", count: counts.trash, color: "text-red-500", bg: "bg-red-500" },
     ];
+
+    const handleLogout = async () => {
+        try {
+            await api.post('logout/');
+        } catch (err) {
+            console.error("Errore durante il logout lato server:", err);
+        } finally { // Anche se il server fallisce, procedere a pulire il locale per sicurezza
+            setUser(null);
+            // Ritorno alla home
+            navigate('/');
+        }
+    };
 
     return (
         <div
@@ -84,7 +100,7 @@ function Sidebar({ isOpen, setIsOpen, tasks }) {
                     </div>
                     {isOpen && <span className="text-[10px] font-black uppercase tracking-widest">Impostazioni</span>}
                 </Link>
-                <button onClick={() => {}} className="flex items-center h-12 text-red-400 hover:text-red-600 group transition-all cursor-pointer w-full rounded-xl">
+                <button onClick={handleLogout} className="flex items-center h-12 text-red-400 hover:text-red-600 group transition-all cursor-pointer w-full rounded-xl">
                     <div className={`flex items-center justify-center transition-all duration-500 ${isOpen ? 'w-16' : 'w-full'}`}>
                         <ArrowLeftOnRectangleIcon className="w-6 h-6 group-hover:-translate-x-1 transition-transform" />
                     </div>

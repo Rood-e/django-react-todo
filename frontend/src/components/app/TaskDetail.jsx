@@ -1,5 +1,5 @@
 import {useNavigate, useOutletContext, useParams} from "react-router-dom";
-import { useState, useEffect } from "react";
+import {useState, useEffect, useRef} from "react";
 import api from "../../api.js";
 
 import { InformationCircleIcon, PencilSquareIcon, ShoppingCartIcon } from "@heroicons/react/24/outline";
@@ -7,6 +7,7 @@ import { InformationCircleIcon, PencilSquareIcon, ShoppingCartIcon } from "@hero
 // Sotto-componenti
 import NoteEditor from "./types/NoteEditor.jsx";
 import ChecklistEditor from "./types/ChecklistEditor.jsx";
+import EditorLayout from "./types/EditorLayout.jsx";
 
 function TypeCard({ title, desc, icon: Icon, onClick }) {
     return (
@@ -48,12 +49,50 @@ function TaskDetail() {
     const { id } = useParams(); // 'new' indica una nuova task, altrimenti è l'ID del DB
     const isNew = id === 'new';
 
+    //Autosave
+    const autosaveTimerRef = useRef(null);
+    const lastSavedDataRef = useRef(null);
+
     // Stati per la gestione dei dati e della UI
     const [task, setTask] = useState(null);
     const [loading, setLoading] = useState(!isNew); // Caricamento attivo solo se stiamo recuperando una task esistente
     const [isSaving, setIsSaving] = useState(false); // Feedback visivo durante le chiamate API
     const [selectedType, setSelectedType] = useState(null); // 'note' o 'list' (solo per nuove task)
     const [categories, setCategories] = useState({});
+
+    const [title, setTitle] = useState("");
+    const [dueDate, setDueDate] = useState('');
+    const [status, setStatus] = useState("tostart");
+    const [selectedCatIds, setSelectedCatIds] = useState([]);
+    const [content,setContent] = useState("");
+
+    const [showDeleteModal, setShowDeleteModal] = useState(false);
+
+    useEffect(() => {
+        if (task) {
+            // Valori normalizzati per evitare discrepanze "" vs null
+            const initialTitle = task.title || "";
+            const initialStatus = task.status || "tostart";
+            const initialDueDate = task.due_date || ""; // Teniamo stringa vuota qui
+            const initialCats = task.categories ? task.categories.map(id => id.toString()) : [];
+            const initialContent = task.content || "";
+
+            setTitle(initialTitle);
+            setStatus(initialStatus);
+            setDueDate(initialDueDate);
+            setSelectedCatIds(initialCats);
+            setContent(initialContent);
+
+            // La FOTO deve essere l'esatta replica di ciò che l'autosave costruirà
+            lastSavedDataRef.current = JSON.stringify({
+                title: initialTitle,
+                status: initialStatus,
+                due_date: initialDueDate || null, // Uniformiamo a null per il confronto
+                categories: initialCats,
+                content: initialContent
+            });
+        }
+    }, [task]);
 
     // Recupera le categorie disponibili all'avvio per popolare i selettori negli editor
     useEffect(() => {
@@ -89,6 +128,50 @@ function TaskDetail() {
         }
     }, [id, isNew]);
 
+    //Autosave
+    useEffect(() => {
+        if (isNew || (task && !task.is_active) || loading) return;
+
+        // Normalizziamo i dati per il confronto
+        const normalizedData = {
+            title: title || "",
+            status: status,
+            due_date: dueDate || null, // Trasformiamo "" in null per il confronto
+            categories: selectedCatIds,
+            content: content
+        };
+
+        const currentDataStr = JSON.stringify(normalizedData);
+
+        // Se i dati attuali sono identici all'ultima "foto", fermati
+        if (currentDataStr === lastSavedDataRef.current) return;
+
+        if (autosaveTimerRef.current) clearTimeout(autosaveTimerRef.current);
+
+        autosaveTimerRef.current = setTimeout(() => {
+            console.log("Salvataggio automatico...");
+            // Fondamentale: aggiorniamo il ref PRIMA di chiamare onSave
+            lastSavedDataRef.current = currentDataStr;
+            onSave(normalizedData);
+        }, 2000);
+
+        return () => {
+            if (autosaveTimerRef.current) clearTimeout(autosaveTimerRef.current);
+        };
+        // Aggiungiamo 'task' alle dipendenze così se il server cambia qualcosa, il ref si aggiorna
+    }, [title, status, dueDate, selectedCatIds, content, isNew, loading]);
+
+    const handleGlobalSave = async (overrideContent = null) => {
+        const payload = {
+            title,
+            status,
+            due_date: dueDate || null,
+            categories: selectedCatIds,
+            content: overrideContent !== null ? overrideContent : content
+        };
+        await onSave(payload);
+    };
+
     // Gestione unificata del salvataggio (POST per nuove, PUT per esistenti)
     const onSave = async (payload) => {
         try {
@@ -108,6 +191,10 @@ function TaskDetail() {
                     return t;
                 }));
             }
+            lastSavedDataRef.current = JSON.stringify({
+                ...payload,
+                due_date: payload.due_date || null
+            });
         } catch (err) {
             console.error(err);
         } finally {
@@ -169,6 +256,11 @@ function TaskDetail() {
         }
     };
 
+    const handleDeleteAction = async () => {
+        setShowDeleteModal(false);
+        await onDelete(); // La tua funzione api.delete esistente
+    };
+
     if (loading) return (
         <div className="flex justify-center items-center h-[calc(100vh-200px)]">
             <div className="animate-spin rounded-full h-12 w-12 border-t-2 border-b-2 border-blue-500"></div>
@@ -197,7 +289,6 @@ function TaskDetail() {
                     />
                 </div>
 
-                {/* Banner info con stile dark migliorato */}
                 <div className="mt-12 p-4 bg-blue-50/50 dark:bg-blue-900/10 rounded-2xl border border-blue-100 dark:border-blue-900/30">
                     <p className="text-xs text-blue-600 dark:text-blue-400 font-bold flex items-center gap-2">
                         <InformationCircleIcon className="w-5 h-5 shrink-0" />
@@ -212,31 +303,33 @@ function TaskDetail() {
 
     // VIEW 2: Editor specifico (Caricato in base al tipo di task)
     return (
-        /* Centratura anche per gli editor se sono brevi */
-        <div className={'-mt-4'}>
+        <EditorLayout
+            title={title} setTitle={setTitle}
+            status={status} setStatus={setStatus}
+            dueDate={dueDate} setDueDate={setDueDate}
+            selectedCatIds={selectedCatIds} setSelectedCatIds={setSelectedCatIds}
+            categories={categories}
+            isArchived={task?.is_active === false} isNew={isNew}
+            onSave={() => handleGlobalSave()}
+            onDelete={onDelete} onRestore={onRestore} isSaving={isSaving}
+            showDeleteModal={showDeleteModal} setShowDeleteModal={setShowDeleteModal}
+            handleDeleteAction={handleDeleteAction}>
+
             {type === 'note' && (
                 <NoteEditor
-                    task={task}
-                    categories={categories}
-                    isNew={isNew}
-                    onSave={onSave}
-                    onDelete={onDelete}
-                    isSaving={isSaving}
-                    onRestore={onRestore}
+                    initialContent={content}
+                    onChange={(html) => setContent(html)}
+                    isArchived={task?.is_active === false}
                 />
             )}
             {type === 'list' && (
                 <ChecklistEditor
-                    task={task}
-                    categories={categories}
-                    isNew={isNew}
-                    onSave={onSave}
-                    onDelete={onDelete}
-                    isSaving={isSaving}
-                    onRestore={onRestore}
+                    initialContent={content}
+                    onChange={(json) => setContent(json)}
+                    isArchived={task?.is_active === false}
                 />
             )}
-        </div>
+        </EditorLayout>
     );
 }
 

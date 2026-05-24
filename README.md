@@ -1,4 +1,3 @@
-
 # 📝 TaskMaster - Full Stack Task Management System
 
 [![Python Version](https://img.shields.io/badge/python-3.12-blue.svg)](https://www.python.org/)
@@ -31,6 +30,7 @@ TaskMaster è un ecosistema avanzato per la gestione della produttività che com
 * **Visualizzazione Calendario:** FullCalendar per una gestione temporale visiva e intuitiva.
 * **Checklist Dinamiche:** Liste di controllo con persistenza dati in formato JSON.
 * **Dashboard Intelligente:** Filtraggio in tempo reale per Stato, Categoria e Tipologia.
+* **Multi-Tab Synchronization:** Sincronizzazione in tempo reale degli stati di autenticazione tra più schede aperte tramite `StorageEvent`.
 * **UI/UX Moderna:** Supporto nativo Dark Mode e design responsive.
 
 ### ⚙️ Backend (Django REST Framework)
@@ -45,7 +45,7 @@ TaskMaster è un ecosistema avanzato per la gestione della produttività che com
 
 | Strato | Tecnologie |
 | :--- | :--- |
-| **Frontend** | React 18, Tailwind CSS, FullCalendar, Tiptap, Framer Motion |
+| **Frontend** | React 18, Tailwind CSS, FullCalendar, Tiptap, Framer Motion, Axios |
 | **Backend** | Python 3.12, Django 5.x, Django REST Framework |
 | **Database** | PostgreSQL (Production), SQLite (Dev) |
 | **DevOps** | Docker, Docker Compose |
@@ -79,29 +79,31 @@ TaskMaster è un ecosistema avanzato per la gestione della produttività che com
 
 | Metodo | Endpoint | Descrizione | Autenticazione |
 | :--- | :--- | :--- | :--- |
-| `GET` | `/api/tasks/` | Lista task dell'utente loggato | Token |
-| `POST` | `/api/tasks/` | Crea una nuova task | Token |
-| `PATCH` | `/api/tasks/{id}/` | Aggiornamento parziale / Soft Delete | Token |
-| `GET` | `/api/categories/` | Lista categorie filtrate per utente | Token |
+| `GET` | `/api/tasks/` | Lista task dell'utente loggato | Session Cookie |
+| `POST` | `/api/tasks/` | Crea una nuova task | Session Cookie + CSRF |
+| `PATCH` | `/api/tasks/{id}/` | Aggiornamento parziale / Soft Delete | Session Cookie + CSRF |
+| `GET` | `/api/categories/` | Lista categorie filtrate per utente | Session Cookie |
+| `GET` | `/api/user/me/` | Endpoint permissivo per il check dello stato | Nessuna (Non-blocking) |
 
 ---
 
 
 ## 🛡️ Sicurezza e Integrità
 
+* **Autenticazione Stateful (Session-Based):** Il sistema utilizza un flusso di autenticazione a sessioni sicuro. I token di sessione sono memorizzati in cookie protetti con flag `HttpOnly` e `SameSite=Lax`, blindando l'applicazione contro attacchi **XSS** (Cross-Site Scripting).
+* **Protezione CSRF Avanzata:** Tutte le richieste di scrittura (`POST`, `PUT`, `PATCH`, `DELETE`) sono protette da middleware CSRF. Il frontend gestisce l'allineamento tramite un intercettore Axios personalizzato che popola l'header `X-CSRFToken`.
 * **Validazione Cross-User:** Protezione lato server contro attacchi **IDOR** (Insecure Direct Object Reference). Ogni richiesta verifica che l'oggetto appartenga all'utente autenticato.
 * **Password Security:** Utilizzo di parametri `write_only` nei Serializer per evitare leak di dati sensibili nelle risposte JSON.
-* **Data Persistence:** Gestione dei volumi Docker per garantire la persistenza del database PostgreSQL anche dopo lo spegnimento dei container.
-* **Autenticazione Stateless**: Sistema basato su Token (DRF Token Authentication). La sicurezza è garantita senza l'uso di sessioni lato server, rendendo l'API scalabile e protetta.
+* **Data Persistence:** Gestione dei volumi Docker e integrazione in produzione con database PostgreSQL gestiti in cloud (Aiven) per garantire la persistenza dei dati.
+
 ---
 
 ## 🛠️ Limitazioni Attuali e Roadmap (Future Features)
 
 Essendo TaskMaster in fase di sviluppo attivo, sono state identificate le seguenti aree di miglioramento e funzionalità pianificate:
 
-* **Gestione Sessioni Statefull**: Attualmente il sistema utilizza esclusivamente Token Authentication (Stateless). È prevista l'implementazione di sessioni lato server e Cookie HttpOnly per una maggiore flessibilità nei diversi casi d'uso web.
-* **Auto-Save System**: Implementazione del salvataggio automatico (debounce) dopo N secondi di inattività nell'editor Rich-Text per prevenire la perdita accidentale di dati.
-* **Notifiche Push & WebSocket**: Integrazione con Django Channels per notifiche in tempo reale sulla scadenza dei task senza necessità di refresh.
+* **Notifiche Push & WebSocket:** Integrazione con Django Channels per notifiche in tempo reale sulla scadenza dei task senza necessità di refresh.
+* **Condivisione Task:** Sviluppo di un sistema di permessi per consentire la collaborazione e la condivisione di specifiche liste di task tra utenti diversi.
 ---
 
 ## 👨‍💻 Autore

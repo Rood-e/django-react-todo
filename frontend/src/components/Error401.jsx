@@ -1,7 +1,7 @@
 import { Link } from 'react-router-dom';
 
 function Error401({children}) {
-    const token = localStorage.getItem('token');
+    const token = document.cookie;
 
     if (token)
         return children;
@@ -24,9 +24,9 @@ function Error401({children}) {
                             hover:text-blue-600 dark:hover:text-blue-400">
                             <span aria-hidden="true">&larr;</span> Torna alla Home
                         </Link>
-                        <Link to="/register" className="rounded-xl bg-blue-600 px-6 py-3 text-sm font-bold text-white shadow-lg
+                        <Link to="/login" className="rounded-xl bg-blue-600 px-6 py-3 text-sm font-bold text-white shadow-lg
                             shadow-blue-500/25 hover:bg-blue-500 transition-all hover:scale-105 active:scale-95">
-                            Registrati
+                            Accedi
                         </Link>
                     </div>
                 </div>

@@ -7,6 +7,8 @@ urlpatterns = [
     path('register/',views.Register.as_view(),name='register'),
     path('login/',views.Login.as_view(),name='login'), # restituisce token
 
+    path('user/me/',views.CurrentUserView.as_view(),name='current_user'),
+
     path('user/', views.UserProfile.as_view(), name='user'),
     path('user/update/',views.UserProfile.as_view(),name='user_update'),
     path('user/delete/',views.UserProfile.as_view(),name='user_delete'),

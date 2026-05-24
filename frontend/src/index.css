@@ -62,6 +62,33 @@
 
 .dark .fc .fc-toolbar-title { color: white; }
 
+.fc .fc-popover{
+  border-radius: 20px;
+}
+
+.fc .fc-popover .fc-popover-header{
+  border-radius: 20px 20px 0 0;
+  padding: 7px 10px;
+  text-transform: uppercase;
+}
+
+.dark .fc .fc-popover {
+  background-color: #1e293b !important;
+}
+
+.dark .fc .fc-popover{
+  box-shadow:
+          0 0 0 1px white,
+          0.1em 0.1em 1em rgba(255, 204, 204, 0.6);
+}
+
+.fc .fc-popover{
+  box-shadow:
+          0 0 0 1px darkgrey,
+          0.1em 0.1em 1em rgba(55, 55, 55, 0.6);
+}
+
+
 /* Bottoni Standard */
 .fc .fc-button-primary {
   background: transparent !important;

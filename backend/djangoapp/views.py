@@ -1,12 +1,15 @@
-from django.contrib.auth import authenticate, get_user_model
+from django.contrib.auth import authenticate, get_user_model, login, logout
 from django.contrib.auth.hashers import check_password
 from django.utils import timezone
 from rest_framework import generics, status, authentication, permissions
 from rest_framework.authtoken.models import Token
 from rest_framework.authtoken.views import ObtainAuthToken
-from rest_framework.permissions import AllowAny
+from rest_framework.permissions import AllowAny,IsAuthenticated
+from rest_framework.authentication import TokenAuthentication
 from rest_framework.response import Response
 from rest_framework.views import APIView
+from django.views.decorators.csrf import csrf_exempt, ensure_csrf_cookie
+from django.utils.decorators import method_decorator
 
 from .models import Task, Category
 from .serializers import UserSerializer, TaskSerializer, CategorySerializer
@@ -15,33 +18,19 @@ from .serializers import UserSerializer, TaskSerializer, CategorySerializer
 # Esempio: getAllTasks().
 # È la View che decide: "Prendi tutti i Task dal database, filtrali per l'utente X e passali al Serializer".
 
-"""
-@api_view(['POST'])
-@permission_classes([AllowAny]) # Permette la registrazione ai non loggati
-def register_user(request):
-    # Passaggio dei dati al serializer
-    serializer = UserSerializer(data=request.data)
-
-    # Il Serializer controlla se i dati rispettano i vincoli (username unico, email valida, ecc.)
-    if serializer.is_valid():
-        serializer.save() # Chiamata al metodo create() (serializer)
-        return Response(serializer.data, status=status.HTTP_201_CREATED)
-
-    # Restituisce automaticamente gli errori (es. "Username esistente")
-    return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
-"""
 class Register(generics.CreateAPIView):
     serializer_class = UserSerializer
     permission_classes = [AllowAny]
 
 User = get_user_model()
 
-class Login(ObtainAuthToken):
-    """
+# Versione adatta al TokenAuthentication
+""" class Login(ObtainAuthToken):
+     """"""
         Endpoint di Login personalizzato.
-        Permette l'autenticazione tramite Email (più user-friendly)
-        restituendo un Token statico per le sessioni successive.
-    """
+        Permette l'autenticazione tramite Email restituendo
+        un Token statico per le sessioni successive.
+     """"""
     def post(self, request, *args, **kwargs):
         email = request.data.get('email')
         password = request.data.get('password')
@@ -68,16 +57,79 @@ class Login(ObtainAuthToken):
         else:
             return Response({
                 'error': "Credenziali non valide"
-            }, status=status.HTTP_400_BAD_REQUEST)
+            }, status=status.HTTP_400_BAD_REQUEST) """
 
-class Logout(APIView):
-    permission_classes = [AllowAny]
+@method_decorator(csrf_exempt, name='dispatch')
+class Login(APIView):
+    permission_classes = [permissions.AllowAny]
+
+    def post(self, request, *args, **kwargs):
+        email = request.data.get('email')
+        password = request.data.get('password')
+
+        if not email or not password:
+            return Response({"Error": "Email e Password Obbligatorie"}, status=status.HTTP_400_BAD_REQUEST)
+
+        try:
+            user_obj = User.objects.get(email=email)
+            user = authenticate(request, username=user_obj.username, password=password)
+        except User.DoesNotExist:
+            user = None
+
+        if user is not None:
+            login(request, user) # Questo imposta il sessionid
+
+            # Si forza Django a generare il cookie CSRF fisicamente ora che l'utente è loggato
+            from django.middleware.csrf import get_token
+            get_token(request)
+
+            return Response({
+                "message": "Login effettuato con successo",
+                "username": user.username,
+                "email": user.email
+            }, status=status.HTTP_200_OK)
+        else:
+            return Response({"error": "Credenziali errate"}, status=status.HTTP_401_UNAUTHORIZED)
+
+@method_decorator(ensure_csrf_cookie, name='dispatch')
+class CurrentUserView(APIView):
+    """
+    Endpoint permissivo. Risponde sempre 200 OK.
+    Permette al frontend di verificare lo stato dell'utente senza generare errori in console.
+    """
+    permission_classes = [permissions.AllowAny]
+
+    def get(self, request):
+        if request.user.is_authenticated:
+            return Response({
+                "authenticated": True,
+                "username": request.user.username,
+                "email": request.user.email,
+                "id": request.user.id
+            }, status=status.HTTP_200_OK)
+
+        # Se è anonimo, 200 OK ma diciamo che non è autenticato
+        return Response({
+            "authenticated": False
+        }, status=status.HTTP_200_OK)
+
+# Versione con token e localStorage
+""" class Logout(APIView):
+    permission_classes = [IsAuthenticated]
+    authentication_classes = [TokenAuthentication]
     def post(self, request, *args, **kwargs):
         try:
             request.user.auth_token.delete()
             return Response({"message":"Logout effettuato con successo"},status=status.HTTP_204_NO_CONTENT)
         except Exception as e:
-            return Response({"error": str(e)},status=status.HTTP_400_BAD_REQUEST)
+            return Response({"error": str(e)},status=status.HTTP_400_BAD_REQUEST) """
+
+class Logout(APIView):
+    permission_classes = [permissions.IsAuthenticated]
+
+    def post(self, request):
+        logout(request) # Cancellazione della sessione e invalidazione del cookie
+        return Response({"message": "Logout effettuato"}, status=status.HTTP_200_OK)
 
 class UserProfile(APIView):
     """
@@ -85,8 +137,7 @@ class UserProfile(APIView):
         Richiede sempre la password corrente per autorizzare modifiche sensibili.
     """
     # Questi due garantiscono che solo chi ha un TOKEN valido possa entrare
-    authentication_classes = [authentication.TokenAuthentication]
-    permission_classes = [permissions.IsAuthenticated]
+    permission_classes = [IsAuthenticated]
 
     # Prelievo dell'utente
     def get(self, request):
@@ -141,8 +192,7 @@ class Tasks(APIView):
         Endpoint per la gestione delle Task.
         Implementa il filtraggio rigoroso: ogni utente vede solo i propri dati.
     """
-    authentication_classes = [authentication.TokenAuthentication]
-    permission_classes = [permissions.IsAuthenticated]
+    permission_classes = [IsAuthenticated]
 
     def get_object(self, pk, user):
         try:
@@ -243,8 +293,7 @@ class Categories(APIView):
     Gestione delle etichette (Categories).
     Il sistema garantisce che un utente non possa vedere o modificare categorie altrui.
     """
-    authentication_classes = [authentication.TokenAuthentication]
-    permission_classes = [permissions.IsAuthenticated]
+    permission_classes = [IsAuthenticated]
 
     def get_object(self,pk,user):
         try:

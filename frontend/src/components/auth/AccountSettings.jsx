@@ -5,6 +5,7 @@ import api from "../../api.js";
 import {KeyIcon, UserCircleIcon, ArrowLeftIcon, ExclamationTriangleIcon} from "@heroicons/react/24/outline";
 import LoadingOverlay from '../aesthetic/LoadingOverlay.jsx'
 import DeletionModal from "../aesthetic/DeletionModal.jsx";
+import {useAuth} from "./AuthContext.jsx";
 
 function Settings(){
     const navigate = useNavigate();
@@ -16,25 +17,24 @@ function Settings(){
         new_password: ''
     });
 
+    const {user,setUser,loading} = useAuth();
+
     // Stato per gli errori specifici dei campi
     const [fieldErrors, setFieldErrors] = useState({});
     const [message, setMessage] = useState({ type: '', text: '' });
 
-    const [loading, setLoading] = useState(false);
-    const [loadingMessage, setLoadingMessage] = useState('');
+    const [port, setLoading] = useState(false);
+    const [loadingMessage, setLoadingMessage] = useState('Caricamento dei dati...');
 
     // GET: dati utente
     useEffect(() => {
-        const fetchUser = async () => {
-            try {
-                const res = await api.get('user/');
-                setFormData(prev => ({ ...prev, username: res.data.username, email: res.data.email }));
-            } catch (err) {
-                console.error("Errore caricamento dati", err);
-            }
+        const setUserData = () => {
+            setFormData(prev => ({ ...prev, username: user.username, email: user.email }))
         };
-        fetchUser();
-    }, []);
+
+        if(!loading)
+            setUserData();
+    }, [loading]);
 
     // Pulizia del campo ed eliminazione degli errori durante la scrittura dell'utente
     const handleChange = (e) => {
@@ -54,7 +54,7 @@ function Settings(){
 
         try {
             let response = await api.put('user/update/', formData);
-            localStorage.setItem('user', formData.username);
+            setUser(formData.username);
             setMessage({ type: 'success', text: response.data.message });
             // Puliamo le password dopo il successo
             setFormData(prev => ({ ...prev, current_password: '', new_password: '' }));
@@ -84,7 +84,7 @@ function Settings(){
         setLoading(true);
         try {
             await api.delete('user/delete/');
-            localStorage.clear();
+            setUser(null)
             navigate('/');
         } catch (err) {
             setMessage({ type: 'error', text: 'Errore durante l\'eliminazione.' });
@@ -93,9 +93,11 @@ function Settings(){
         }
     };
 
+    if(loading && port)
+        return <LoadingOverlay message={loadingMessage}></LoadingOverlay>
+
     return (
         <div className='relative min-h-screen'>
-            {loading && <LoadingOverlay message={loadingMessage}/>}
 
             <div className={`max-w-4xl m-auto p-8 animate-in fade-in slide-in-from-bottom-4 duration-700 ${showDeleteModal ? 'blur-sm pointer-events-none' : ''}`}>
                 <header className="mb-10">

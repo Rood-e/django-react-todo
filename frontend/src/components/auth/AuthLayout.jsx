@@ -2,6 +2,8 @@ import ThemeButton from "../ThemeButton.jsx";
 import { MeshGradient } from '@paper-design/shaders-react';
 import {useEffect, useState} from "react";
 import {useNavigate} from "react-router-dom";
+import {useAuth} from "./AuthContext.jsx";
+import LoadingOverlay from "../aesthetic/LoadingOverlay.jsx";
 
 const lightColors = ["#FFFFFF", "#F0F9FF", "#3B82F6", "#DBEAFE"];
 const darkColors = ["#142749", "#1549c5", "#3469a6", "#0e2160"];
@@ -10,6 +12,7 @@ const darkColors = ["#142749", "#1549c5", "#3469a6", "#0e2160"];
 function AuthLayout({children,isDark,setIsDark}) {
     const [isTransitioning, setIsTransitioning] = useState(false);
     const navigate = useNavigate();
+    const {user,loading} = useAuth();
 
     useEffect(() => {
         setIsTransitioning(true);
@@ -17,9 +20,18 @@ function AuthLayout({children,isDark,setIsDark}) {
         return () => clearTimeout(timeout);
     }, [isDark]);
 
-    // Se l'utente ha già effettuato l'accesso, allora viene automaticamente mandato alla dashbaord
-    if(localStorage.getItem('token'))
-        navigate('/app');
+    useEffect(() => {
+        const checkUser = () => {
+            if(user)
+                navigate('/app');
+        }
+
+        if(!loading)
+            checkUser();
+    },[loading])
+
+    if(loading)
+        return <LoadingOverlay message="Caricamento in corso..." />
 
     return (
         <div className="min-h-screen flex items-center justify-center bg-slate-50 dark:bg-slate-950 px-4 transition-colors duration-250">

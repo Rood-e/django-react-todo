@@ -11,10 +11,12 @@ import {
 import {Link, useNavigate, useOutletContext} from "react-router-dom";
 import FilterSystem from "./FilterSystem.jsx";
 import TaskCard from "./TaskCard.jsx";
+import { useAuth } from "../auth/AuthContext";
 
 import DeletionModal from "../aesthetic/DeletionModal.jsx";
 import CreationModal from "../aesthetic/CreationModal.jsx";
 import EventModal from "../aesthetic/EventModal.jsx";
+import LoadingOverlay from "../aesthetic/LoadingOverlay.jsx";
 
 // Sotto-componente per le card delle statistiche
 function StatCard({ title, value, icon: Icon, color }) {
@@ -43,12 +45,14 @@ function Dashboard({ isTrashView = false }) {
     const { appTasks, setAppTasks } = useOutletContext();
     const navigate = useNavigate();
 
+    const { user, loading } = useAuth();
+
     // Stati locali per la gestione della visualizzazione e dei modali
     const [tasks, setTasks] = useState([]); // Task filtrate per stato is_active
     const [filteredTasks, setFilteredTasks] = useState([]); // Task dopo i filtri avanzati
     const [categoriesMap, setCategoriesMap] = useState({});
     const [stats, setStats] = useState({ total: 0, completed: 0, pending: 0 });
-    const [loading, setLoading] = useState(true);
+    const [loading2, setLoading] = useState(true);
     const [showEmptyTrashModal, setShowEmptyTrashModal] = useState(false);
 
     const [showCategoryCreationModal, setshowCategoryCreationModal] = useState(false);
@@ -233,6 +237,8 @@ function Dashboard({ isTrashView = false }) {
             setIsEventModalOpen(false);
         } catch (err) { console.error(err); }
     };
+    if(loading || loading2)
+        return <LoadingOverlay message={"Caricamento dati..."} />
 
     return (
         <div className="space-y-10 animate-in fade-in duration-500">
@@ -243,7 +249,7 @@ function Dashboard({ isTrashView = false }) {
                         {isTrashView ? (
                             <>Il tuo <span className="text-red-500">Cestino</span></>
                         ) : (
-                            <>Bentornato, <span className="text-blue-600">{localStorage.getItem('user')}</span></>
+                            <>Bentornato, <span className="text-blue-600">{user.username}</span></>
                         )}
                     </h1>
                     <p className="text-slate-500 font-medium">
@@ -300,7 +306,7 @@ function Dashboard({ isTrashView = false }) {
                         {currentTasks.length > 0 ? (
                             currentTasks.map(task => (
                                 <div key={task.id} onClick={() => handleTaskClick(task)} className="cursor-pointer h-fit">
-                                    <TaskCard task={task} categoriesMap={categoriesMap} />
+                                    <TaskCard task={task} categoriesMap={categoriesMap} handleTaskClick={handleTaskClick}/>
                                 </div>
                             ))
                         ) : (

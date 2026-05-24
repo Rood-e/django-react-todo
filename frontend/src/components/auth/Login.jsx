@@ -4,6 +4,7 @@ import {ArrowLeftIcon} from "@heroicons/react/24/outline";
 import api from "../../api.js";
 
 import LoadingOverlay from "../aesthetic/LoadingOverlay.jsx";
+import {useAuth} from "./AuthContext.jsx";
 
 const log_in = async (data) => {
     return await api.post("login/", data);
@@ -13,6 +14,7 @@ function Login(){
     const [errors, setErrors] = useState([]);
     const [backendErrors, setBackendErrors] = useState({});
     const navigate = useNavigate();
+    const {setUser} = useAuth();
 
     const [loading, setLoading] = useState(false);
     const [loadingMessage, setLoadingMessage] = useState('');
@@ -76,11 +78,12 @@ function Login(){
             // Attendiamo la risposta che contiene il token generato da Django
             const response = await log_in(data);
 
-            // Salviamo il token nel localStorage per usarlo nelle chiamate future
-            localStorage.setItem('token', response.data.token);
-
             // Salvataggio dell'username
-            localStorage.setItem('user', response.data.username);
+            setUser({
+                username:response.data.username
+            });
+
+            localStorage.setItem('auth_session_token', Date.now().toString());
 
             navigate('/app');
         } catch (e) {

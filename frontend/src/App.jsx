@@ -1,5 +1,5 @@
 import { Routes, Route } from 'react-router-dom';
-import { useEffect, useState } from "react";
+import {useState} from "react";
 
 import Home from './components/Home/Home.jsx';
 import LegalHub from './components/legal/LegalHub';
@@ -17,8 +17,10 @@ import Dashboard from "./components/app/Dashboard.jsx";
 import TaskDetail from "./components/app/TaskDetail.jsx";
 import AppCalendar from "./components/app/types/AppCalendar.jsx";
 
-import {Toaster} from "react-hot-toast";
 import {CheckCircleIcon, XCircleIcon} from "@heroicons/react/24/outline";
+import {useAuth} from "./components/auth/AuthContext.jsx";
+import {Toaster} from "react-hot-toast";
+import LoadingOverlay from "./components/aesthetic/LoadingOverlay.jsx";
 
 function App() {
     const [isDark, setIsDark] = useState(() => {
@@ -26,15 +28,10 @@ function App() {
             (!('theme' in localStorage) && window.matchMedia('(prefers-color-scheme: dark)').matches);
     });
 
-    useEffect(() => {
-        if (isDark) {
-            document.documentElement.classList.add('dark');
-            localStorage.theme = 'dark';
-        } else {
-            document.documentElement.classList.remove('dark');
-            localStorage.theme = 'light';
-        }
-    }, [isDark]);
+    const { loading } = useAuth();
+
+    if(loading)
+        return <LoadingOverlay message={'Caricamento in corso...'}/>
 
     return (
         <div className={isDark ? 'dark' : ''}>
