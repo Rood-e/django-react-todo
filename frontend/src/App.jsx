@@ -1,5 +1,5 @@
 import { Routes, Route } from 'react-router-dom';
-import {useState} from "react";
+import {useEffect, useState} from "react";
 
 import Home from './components/Home/Home.jsx';
 import LegalHub from './components/legal/LegalHub';
@@ -31,9 +31,8 @@ const ProtectedApp = ({ children }) => {
     }
 
     // Se il check è finito e l'utente NON è loggato, allora mostriamo l'Error401
-    if (!user) {
+    if (!user)
         return <Error401 />;
-    }
 
     // Se l'utente c'è, carichiamo l'applicazione
     return children;
@@ -44,6 +43,10 @@ function App() {
         return localStorage.theme === 'dark' ||
             (!('theme' in localStorage) && window.matchMedia('(prefers-color-scheme: dark)').matches);
     });
+
+    useEffect(()=>{
+        localStorage.setItem('theme', isDark? 'dark' : 'light');
+    },[isDark])
 
     const { loading } = useAuth();
 

@@ -1,28 +1,7 @@
 import { useEffect } from "react";
-import { useEditor, EditorContent } from '@tiptap/react';
-import StarterKit from '@tiptap/starter-kit';
+import { EditorContent } from '@tiptap/react';
 
-function NoteEditor({ initialContent, onChange, isArchived }) {
-    const editor = useEditor({
-        editable: !isArchived,
-        extensions: [
-            StarterKit.configure({
-                heading: { levels: [1, 2] },
-                bulletList: true,
-                orderedList: true,
-            }),
-        ],
-        content: initialContent,
-        onUpdate: ({ editor }) => {
-            onChange(editor.getHTML());
-        },
-        editorProps: {
-            attributes: {
-                class: 'outline-none prose prose-slate dark:prose-invert max-w-none text-xl min-h-[500px] leading-relaxed cursor-text p-10',
-            },
-        },
-    });
-
+function NoteEditor({ editor, initialContent, isArchived }) {
     // Sincronizza l'editor se il contenuto cambia esternamente (es. caricamento task)
     useEffect(() => {
         if (editor && initialContent !== editor.getHTML()) {
@@ -30,12 +9,20 @@ function NoteEditor({ initialContent, onChange, isArchived }) {
         }
     }, [initialContent, editor]);
 
+    useEffect(() => {
+        if (editor)
+            editor.setEditable(!isArchived);
+    }, [isArchived, editor]);
+
     if (!editor) return null;
 
     return (
-        <div className="max-w-5xl mx-auto">
-            <EditorContent editor={editor} />
-        </div>
+        <>
+            <div className="max-w-5xl mx-auto bg-amber-50 dark:bg-slate-800 min-h-screen py-3 px-2 rounded-xl">
+                <EditorContent editor={editor} />
+            </div>
+            <div className="max-w-5xl mx-auto h-11"></div>
+        </>
     );
 }
 

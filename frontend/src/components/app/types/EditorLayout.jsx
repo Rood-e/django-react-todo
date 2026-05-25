@@ -13,6 +13,13 @@ import {
     ClockIcon
 } from "@heroicons/react/24/outline";
 import DeletionModal from "../../aesthetic/DeletionModal.jsx";
+import {
+    Bars3BottomLeftIcon,
+    BoldIcon,
+    ChevronUpIcon,
+    ItalicIcon,
+    ListBulletIcon
+} from "@heroicons/react/24/outline";
 
 const STATUS_OPTIONS = [
     { value: 'tostart', label: 'Da Iniziare', icon: StopIcon, color: 'text-slate-400', desc: 'Attività non ancora avviata' },
@@ -21,8 +28,8 @@ const STATUS_OPTIONS = [
     { value: 'completed', label: 'Completata', icon: CheckCircleIcon, color: 'text-green-500', desc: 'Task portata a termine' }
 ];
 
-function EditorLayout({ children, title, setTitle, status, setStatus, dueDate, setDueDate,
-                          selectedCatIds, setSelectedCatIds, categories, isNew, isArchived,
+function EditorLayout({ children, editor, title, setTitle, status, setStatus, dueDate, setDueDate,
+                          selectedCatIds, setSelectedCatIds, categories, type, isNew, isArchived,
                           onSave, onDelete, onRestore, isSaving, showDeleteModal, setShowDeleteModal}) {
     const navigate = useNavigate();
     const statusMenuRef = useRef(null);
@@ -30,6 +37,7 @@ function EditorLayout({ children, title, setTitle, status, setStatus, dueDate, s
 
     const [isStatusOpen, setIsStatusOpen] = useState(false);
     const [isCatMenuOpen, setIsCatMenuOpen] = useState(false);
+    const [showToolbar, setShowToolbar] = useState(true);
 
     // Gestione click esterno per chiudere i menu
     useEffect(() => {
@@ -238,9 +246,36 @@ function EditorLayout({ children, title, setTitle, status, setStatus, dueDate, s
                         )}
                     </div>
                 </div>
+                {showToolbar && !isArchived && (type === 'note') && editor &&(
+                    <div className="flex items-center justify-between px-10 py-3 bg-slate-50/50 dark:bg-slate-800/20 border-t border-slate-100 dark:border-slate-800">
+                        <div className="flex items-center gap-2">
+                            <ToolButton icon={BoldIcon} label="B" onClick={() => editor.chain().focus().toggleBold().run()} active={editor.isActive('bold')} />
+                            <ToolButton icon={ItalicIcon} label="I" onClick={() => editor.chain().focus().toggleItalic().run()} active={editor.isActive('italic')} />
+                            <button onClick={() => editor.chain().focus().toggleUnderline().run()} className={`px-3 py-1.5 rounded-lg text-xs font-black border transition-all cursor-pointer ${editor.isActive('underline') ? 'bg-blue-500 text-white border-blue-500 shadow-md' : 'text-slate-400 border-transparent hover:bg-white dark:hover:bg-slate-700'}`}><u>U</u></button>
+                            <div className="w-px h-6 bg-slate-200 dark:bg-slate-700 mx-2" />
+                            <ToolButton icon={HashtagIcon} label="H1" onClick={() => editor.chain().focus().toggleHeading({ level: 1 }).run()} active={editor.isActive('heading', { level: 1 })} />
+                            <ToolButton icon={HashtagIcon} label="H2" onClick={() => editor.chain().focus().toggleHeading({ level: 2 }).run()} active={editor.isActive('heading', { level: 2 })} />
+                            <div className="w-px h-6 bg-slate-200 dark:bg-slate-700 mx-2" />
+                            <ToolButton icon={ListBulletIcon} label="Lista" onClick={() => editor.chain().focus().toggleBulletList().run()} active={editor.isActive('bulletList')} />
+                            <ToolButton icon={Bars3BottomLeftIcon} label="Citazione" onClick={() => editor.chain().focus().toggleBlockquote().run()} active={editor.isActive('blockquote')} />
+                        </div>
+                        <button onClick={() => setShowToolbar(false)} className="p-2 text-slate-400 hover:text-blue-500 hover:bg-slate-100 dark:hover:bg-slate-800 rounded-xl cursor-pointer"><ChevronUpIcon className="w-4 h-4" /></button>
+                    </div>
+                )}
+                {!showToolbar && !isArchived && (type === 'note') && (
+                    <div className="flex justify-end px-10 py-2 bg-slate-50/30 dark:bg-slate-800/10 border-t border-slate-100 dark:border-slate-800 animate-in fade-in duration-200">
+                        <button
+                            onClick={() => setShowToolbar(true)}
+                            className="flex items-center gap-2 px-3 py-1.5 text-slate-400 hover:text-blue-500 hover:bg-slate-100 dark:hover:bg-slate-800 rounded transition-all cursor-pointer font-black text-[9px] uppercase tracking-widest"
+                        >
+                            <span>Mostra Strumenti</span>
+                            <ChevronDownIcon className="w-3.5 h-3.5" />
+                        </button>
+                    </div>
+                )}
             </header>
 
-            <main className="flex-1 overflow-y-auto bg-white dark:bg-slate-900 custom-scrollbar">
+            <main className="flex-1 overflow-y-auto bg-white dark:bg-slate-900 custom-scrollbar py-4">
                 <div className="max-w-5xl mx-auto">
                     {children}
                 </div>
@@ -251,6 +286,15 @@ function EditorLayout({ children, title, setTitle, status, setStatus, dueDate, s
                             description={isArchived ? "Questa azione è irreversibile. La nota verrà rimossa permanentemente."
                                 : "La nota non sarà più visibile nella dashboard principale, ma potrai ripristinarla dal cestino."}/>
         </div>
+    );
+}
+
+function ToolButton({ icon: Icon, label, onClick, active }) {
+    return (
+        <button onClick={onClick} className={`flex items-center gap-2 px-3 py-1.5 rounded-lg border transition-all cursor-pointer ${active ? 'bg-blue-500 text-white border-blue-500 shadow-md' : 'border-transparent hover:bg-white dark:hover:bg-slate-700 text-slate-400'}`}>
+            <Icon className="w-4 h-4" />
+            <span className="text-[9px] font-black uppercase tracking-tighter">{label}</span>
+        </button>
     );
 }
 

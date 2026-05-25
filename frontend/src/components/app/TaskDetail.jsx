@@ -1,8 +1,10 @@
 import {useNavigate, useOutletContext, useParams} from "react-router-dom";
-import {useState, useEffect, useRef} from "react";
+import {useEffect, useRef, useState} from "react";
 import api from "../../api.js";
+import {useEditor} from '@tiptap/react';
+import StarterKit from '@tiptap/starter-kit';
 
-import { InformationCircleIcon, PencilSquareIcon, ShoppingCartIcon } from "@heroicons/react/24/outline";
+import {InformationCircleIcon, PencilSquareIcon, ShoppingCartIcon} from "@heroicons/react/24/outline";
 
 // Sotto-componenti
 import NoteEditor from "./types/NoteEditor.jsx";
@@ -67,6 +69,24 @@ function TaskDetail() {
     const [content,setContent] = useState("");
 
     const [showDeleteModal, setShowDeleteModal] = useState(false);
+    const editor = useEditor({
+        extensions: [
+            StarterKit.configure({
+                heading: { levels: [1, 2] },
+                bulletList: true,
+                orderedList: true,
+            }),
+        ],
+        content: content,
+        onUpdate: ({ editor }) => {
+            setContent(editor.getHTML()); // Aggiorna lo stato del padre in tempo reale per l'autosave
+        },
+        editorProps: {
+            attributes: {
+                class: 'outline-none prose prose-slate dark:prose-invert max-w-none text-xl min-h-[500px] leading-relaxed cursor-text p-10',
+            },
+        },
+    });
 
     useEffect(() => {
         if (task) {
@@ -179,6 +199,8 @@ function TaskDetail() {
             if (isNew) {
                 // Creazione: invia i dati e reindirizza all'ID creato
                 const res = await api.post("tasks/", { ...payload, type: selectedType });
+                payload.id = res.data.id;
+                payload.is_active = true;
                 setAppTasks(prev => [payload, ...prev]);
                 navigate(`/app/task/${res.data.id}`, { replace: true });
             } else {
@@ -303,12 +325,12 @@ function TaskDetail() {
 
     // VIEW 2: Editor specifico (Caricato in base al tipo di task)
     return (
-        <EditorLayout
+        <EditorLayout editor={editor}
             title={title} setTitle={setTitle}
             status={status} setStatus={setStatus}
             dueDate={dueDate} setDueDate={setDueDate}
             selectedCatIds={selectedCatIds} setSelectedCatIds={setSelectedCatIds}
-            categories={categories}
+            categories={categories} type={type}
             isArchived={task?.is_active === false} isNew={isNew}
             onSave={() => handleGlobalSave()}
             onDelete={onDelete} onRestore={onRestore} isSaving={isSaving}
@@ -320,6 +342,7 @@ function TaskDetail() {
                     initialContent={content}
                     onChange={(html) => setContent(html)}
                     isArchived={task?.is_active === false}
+                    editor={editor}
                 />
             )}
             {type === 'list' && (
