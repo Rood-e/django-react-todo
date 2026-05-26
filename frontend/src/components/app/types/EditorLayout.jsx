@@ -30,7 +30,8 @@ const STATUS_OPTIONS = [
 
 function EditorLayout({ children, editor, title, setTitle, status, setStatus, dueDate, setDueDate,
                           selectedCatIds, setSelectedCatIds, categories, type, isNew, isArchived,
-                          onSave, onDelete, onRestore, isSaving, showDeleteModal, setShowDeleteModal}) {
+                          onSave, onDelete, onRestore, isSaving, showDeleteModal, setShowDeleteModal,
+                          selectionKey}) {
     const navigate = useNavigate();
     const statusMenuRef = useRef(null);
     const catMenuRef = useRef(null);
@@ -162,7 +163,7 @@ function EditorLayout({ children, editor, title, setTitle, status, setStatus, du
                             <button
                                 disabled={isArchived}
                                 onClick={() => setIsStatusOpen(!isStatusOpen)}
-                                className={`flex items-center gap-3 px-4 py-2 bg-slate-50 dark:bg-slate-800/50 border border-slate-200 dark:border-slate-700 rounded-xl font-black text-[10px] uppercase tracking-widest transition-all 
+                                className={`flex items-center gap-3 px-4 py-2 bg-slate-50 dark:bg-slate-800/50 border border-slate-200 dark:border-slate-700 rounded-xl font-black dark:text-slate-300 text-[10px] uppercase tracking-widest transition-all 
                                 ${isArchived
                                     ? 'opacity-50 cursor-not-allowed'
                                     : 'hover:border-blue-500 cursor-pointer'
@@ -177,7 +178,7 @@ function EditorLayout({ children, editor, title, setTitle, status, setStatus, du
                             </span>
 
                             {isStatusOpen && !isArchived && (
-                                <div className="absolute top-full mt-2 w-64 bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-2xl shadow-2xl z-50 overflow-hidden animate-in fade-in zoom-in duration-200">
+                                <div className="absolute top-full mt-2 w-64 bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 font-black dark:text-slate-300 rounded-2xl shadow-2xl z-50 overflow-hidden animate-in fade-in zoom-in duration-200">
                                     {STATUS_OPTIONS.map((opt) => (
                                         <button
                                             key={opt.value}
@@ -276,7 +277,7 @@ function EditorLayout({ children, editor, title, setTitle, status, setStatus, du
             </header>
 
             <main className="flex-1 overflow-y-auto bg-white dark:bg-slate-900 custom-scrollbar py-4">
-                <div className="max-w-5xl mx-auto">
+                <div className="max-w-5xl mx-auto dark:text-slate-300">
                     {children}
                 </div>
             </main>

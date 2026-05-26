@@ -69,6 +69,7 @@ function TaskDetail() {
     const [content,setContent] = useState("");
 
     const [showDeleteModal, setShowDeleteModal] = useState(false);
+    const [selectionToggle, setSelectionToggle] = useState(0);
     const editor = useEditor({
         extensions: [
             StarterKit.configure({
@@ -80,6 +81,9 @@ function TaskDetail() {
         content: content,
         onUpdate: ({ editor }) => {
             setContent(editor.getHTML()); // Aggiorna lo stato del padre in tempo reale per l'autosave
+        },
+        onSelectionUpdate: () => {
+            setSelectionToggle(prev => prev + 1);
         },
         editorProps: {
             attributes: {
@@ -145,8 +149,23 @@ function TaskDetail() {
                 }
             };
             fetchTask();
+        }else {
+            // --- IL GRANDE RESET PER LE NUOVE TASK ---
+            setTask(null);
+            setSelectedType(null);
+
+            // Svuota tutti gli stati dei metadati
+            setTitle("");
+            setStatus("tostart");
+            setDueDate("");
+            setSelectedCatIds([]);
+            setContent(""); // Svuota il content del padre (salva la checklist dal crash)
+
+            // Svuota l'editor di Tiptap se esiste già in memoria
+            if (editor)
+                editor.commands.clearContent()
         }
-    }, [id, isNew]);
+    }, [id, isNew, editor]);
 
     //Autosave
     useEffect(() => {
@@ -169,7 +188,6 @@ function TaskDetail() {
         if (autosaveTimerRef.current) clearTimeout(autosaveTimerRef.current);
 
         autosaveTimerRef.current = setTimeout(() => {
-            console.log("Salvataggio automatico...");
             // Fondamentale: aggiorniamo il ref PRIMA di chiamare onSave
             lastSavedDataRef.current = currentDataStr;
             onSave(normalizedData);
@@ -335,7 +353,7 @@ function TaskDetail() {
             onSave={() => handleGlobalSave()}
             onDelete={onDelete} onRestore={onRestore} isSaving={isSaving}
             showDeleteModal={showDeleteModal} setShowDeleteModal={setShowDeleteModal}
-            handleDeleteAction={handleDeleteAction}>
+            handleDeleteAction={handleDeleteAction} selectionKey={selectionToggle}>
 
             {type === 'note' && (
                 <NoteEditor

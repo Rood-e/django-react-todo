@@ -52,7 +52,7 @@ function Dashboard({ isTrashView = false }) {
     const [filteredTasks, setFilteredTasks] = useState([]); // Task dopo i filtri avanzati
     const [categoriesMap, setCategoriesMap] = useState({});
     const [stats, setStats] = useState({ total: 0, completed: 0, pending: 0 });
-    const [loading2, setLoading] = useState(true);
+    const [loading2, setLoading2] = useState(true);
     const [showEmptyTrashModal, setShowEmptyTrashModal] = useState(false);
 
     const [showCategoryCreationModal, setshowCategoryCreationModal] = useState(false);
@@ -83,7 +83,7 @@ function Dashboard({ isTrashView = false }) {
     useEffect(() => {
         const initDashboard = () => {
             if (!appTasks) return;
-            setLoading(true);
+            setLoading2(true);
             try {
                 // Filtra tra task attive e task nel cestino in base alla prop isTrashView
                 const allTasks = appTasks.filter(task => task.is_active === !isTrashView);
@@ -98,7 +98,7 @@ function Dashboard({ isTrashView = false }) {
             } catch (err) {
                 console.error("Errore inizializzazione Dashboard:", err);
             } finally {
-                setLoading(false);
+                setLoading2(false);
             }
         }
         initDashboard();

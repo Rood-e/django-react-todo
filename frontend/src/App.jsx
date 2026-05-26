@@ -45,7 +45,15 @@ function App() {
     });
 
     useEffect(()=>{
-        localStorage.setItem('theme', isDark? 'dark' : 'light');
+        const root = window.document.documentElement; // Seleziona l'elemento <html>
+
+        if (isDark) {
+            root.classList.add('dark');
+            localStorage.setItem('theme', 'dark');
+        } else {
+            root.classList.remove('dark');
+            localStorage.setItem('theme', 'light');
+        }
     },[isDark])
 
     const { loading } = useAuth();

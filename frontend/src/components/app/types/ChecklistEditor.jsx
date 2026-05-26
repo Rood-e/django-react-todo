@@ -1,18 +1,39 @@
+import { useState, useEffect } from "react";
 import { PlusIcon, TrashIcon, CheckIcon } from "@heroicons/react/24/outline";
 
 function ChecklistEditor({ initialContent, onChange, isArchived }) {
-    // Trasformiamo la stringa JSON in arrivo dal padre in un array di oggetti
-    // Se non c'è contenuto, partiamo con una riga vuota
-    const items = initialContent ? JSON.parse(initialContent) : [{ id: Date.now(), text: "", checked: false }];
+
+    // Funzione helper sicura per il parsing del JSON
+    const parseInitialContent = (content) => {
+        if (!content || content === "<p></p>" || content.trim() === "") {
+            return [{ id: Date.now(), text: "", checked: false }];
+        }
+        try {
+            const parsed = JSON.parse(content);
+            return Array.isArray(parsed) ? parsed : [{ id: Date.now(), text: "", checked: false }];
+        } catch (e) {
+            console.warn("Rilevato contenuto non JSON nella checklist, resetto a riga vuota:", e);
+            return [{ id: Date.now(), text: "", checked: false }];
+        }
+    };
+
+    // Usiamo lo stato locale alimentato dal parse sicuro
+    const [items, setItems] = useState(() => parseInitialContent(initialContent));
+
+    // Sincronizza lo stato locale se il contenuto del padre cambia (es. quando carichi una task esistente)
+    useEffect(() => {
+        setItems(parseInitialContent(initialContent));
+    }, [initialContent]);
 
     // Funzione interna per aggiornare gli item e notificare il padre
     const updateItems = (newItems) => {
-        // Notifichiamo il padre inviando la stringa JSON aggiornata
-        onChange(JSON.stringify(newItems));
+        setItems(newItems); // Aggiorna lo stato locale immediatamente
+        onChange(JSON.stringify(newItems)); // Invia la stringa JSON pulita al padre
     };
 
     return (
         <div className="mt-12 space-y-4 px-4">
+            {/* Il resto del tuo return (items.map, input, bottoni) rimane identico al 100% */}
             {items.map((item) => (
                 <div key={item.id}
                      className={`group flex items-center gap-5 p-5 bg-white dark:bg-slate-900/50 border border-slate-100 dark:border-slate-800 rounded-4xl transition-all ${isArchived ? 'opacity-70' : 'hover:shadow-lg'}`}>
