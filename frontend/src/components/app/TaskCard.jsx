@@ -32,7 +32,7 @@ function TaskCard({ task, isTrashView, categoriesMap, handleTaskClick }) {
                         {/* Riga Metadati: Gestione della scadenza con alert visivo se scaduta */}
                         <div className="flex flex-wrap items-center gap-3 mt-1">
                             {hasDueDate ? (
-                                <div className={`flex items-center gap-1 text-[9px] font-black uppercase tracking-tighter ${isOverdue ? 'text-red-500' : 'text-slate-400'}`}>
+                                <div className={`flex items-center gap-1 text-[9px] font-black uppercase tracking-tighter ${isOverdue && task.status !== 'completed' ? 'text-red-500' : 'text-slate-400'}`}>
                                     <CalendarIcon className="w-3 h-3" />
                                     {new Date(task.due_date).toLocaleDateString()}
                                 </div>

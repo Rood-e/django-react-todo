@@ -272,7 +272,6 @@ function Dashboard({ isTrashView = false }) {
                 <StatCard title="In Sospeso" value={stats?.pending || 0} icon={ClockIcon} color="orange" />
             </div>
 
-            {/* Container Principale Task: Implementa scroll interno per mantenere l'header fisso */}
             <section className="flex flex-col h-150 min-h-100">
                 <header className="flex justify-between items-end mb-6 shrink-0">
                     <h2 className="text-xl font-black text-slate-900 dark:text-white uppercase tracking-widest">
